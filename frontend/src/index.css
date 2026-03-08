@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Background — cool slate */
+  --bg-0: #0F1117;
+  --bg-1: #161921;
+  --bg-2: #1D2029;
+  --bg-3: #262A35;
+  --border: rgba(255,255,255,0.07);
+  --border-accent: rgba(255,255,255,0.12);
+
+  /* Primary — SIX blue */
+  --primary: #3B82F6;
+  --primary-bright: #60A5FA;
+  --primary-dim: #2563EB;
+  --primary-soft: rgba(59,130,246,0.1);
+
+  /* Swiss red — brand accent */
+  --swiss-red: #DC2626;
+  --swiss-red-soft: rgba(220,38,38,0.12);
+
+  /* Success */
+  --success: #22C55E;
+  --success-soft: rgba(34,197,94,0.1);
+
+  /* Error */
+  --error: #EF4444;
+  --error-soft: rgba(239,68,68,0.1);
+
+  /* Warning */
+  --warning: #F59E0B;
+  --warning-soft: rgba(245,158,11,0.1);
+
+  /* Text — cool neutrals */
+  --text-1: #E2E8F0;
+  --text-2: #94A3B8;
+  --text-3: #64748B;
+
+  /* Legacy compat */
+  --gold: var(--primary);
+  --amber: var(--warning);
+  --green: var(--success);
+  --red: var(--error);
+  --jade: var(--success);
+  --vermillion: var(--error);
+  --indigo: var(--primary);
+
+  /* Syntax highlight — code */
+  --syn-tag: #22C55E;
+  --syn-attr: #60A5FA;
+  --syn-val: #F59E0B;
+
+  /* Accent — blue in dark mode */
+  --accent: var(--primary);
+  --accent-soft: var(--primary-soft);
+  --accent-hover: var(--primary-bright);
+}
+
+/* Light mode */
+[data-theme="light"] {
+  --bg-0: #FFFFFF;
+  --bg-1: #F8FAFC;
+  --bg-2: #F1F5F9;
+  --bg-3: #E2E8F0;
+  --border: rgba(0,0,0,0.08);
+  --border-accent: rgba(0,0,0,0.14);
+
+  --primary: #2563EB;
+  --primary-bright: #3B82F6;
+  --primary-dim: #1D4ED8;
+  --primary-soft: rgba(37,99,235,0.06);
+
+  --swiss-red: #DC2626;
+  --swiss-red-soft: rgba(220,38,38,0.06);
+
+  --success: #16A34A;
+  --success-soft: rgba(22,163,74,0.06);
+
+  --error: #DC2626;
+  --error-soft: rgba(220,38,38,0.06);
+
+  --warning: #D97706;
+  --warning-soft: rgba(217,119,6,0.06);
+
+  --text-1: #0F172A;
+  --text-2: #475569;
+  --text-3: #94A3B8;
+
+  /* Sakura accent */
+  --sakura: #D4728C;
+  --sakura-soft: rgba(212,114,140,0.10);
+  --sakura-border: rgba(212,114,140,0.25);
+
+  /* Accent — sakura in light, blue in dark (via override) */
+  --accent: var(--sakura);
+  --accent-soft: var(--sakura-soft);
+  --accent-hover: #C4607A;
+
+  --syn-tag: #16A34A;
+  --syn-attr: #2563EB;
+  --syn-val: #D97706;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--text-1);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-0); }
+::-webkit-scrollbar-thumb {
+  background: var(--border-accent);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* Blinking cursor */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.cursor::after { content:'▋'; animation: blink 1.2s ease-in-out infinite; margin-left:2px; color: var(--primary); }
+
+/* Fade in */
+@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation: fadeIn 0.2s ease-out forwards; }
+
+/* Divider */
+.zen-line {
+  height: 1px;
+  background: var(--border);
+  border: none;
+  margin: 0;
+}
+
+/* Focus ring */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--primary-soft);
+  outline: none;
+}
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+  border-color: var(--sakura) !important;
+  box-shadow: 0 0 0 2px var(--sakura-soft);
+}
+
+/* Selection */
+::selection {
+  background: var(--primary-soft);
+  color: var(--text-1);
+}
+[data-theme="light"] ::selection {
+  background: var(--sakura-soft);
+  color: var(--text-1);
+}
+
+/* Light mode scrollbar */
+[data-theme="light"] ::-webkit-scrollbar-track { background: var(--bg-0); }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--sakura-border); }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: var(--sakura); }
+
+/* Theme toggle */
+.theme-toggle {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: all 0.15s ease;
+  color: var(--text-3);
+}
+.theme-toggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+[data-theme="light"] .theme-toggle:hover {
+  border-color: var(--sakura);
+  color: var(--sakura);
+  background: var(--sakura-soft);
+}
+
+/* Syntax highlight classes */
+.syn-tag  { color: var(--syn-tag); }
+.syn-attr { color: var(--syn-attr); }
+.syn-val  { color: var(--syn-val); }

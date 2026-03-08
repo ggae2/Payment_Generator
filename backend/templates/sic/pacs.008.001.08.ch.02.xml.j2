@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="http://www.six-interbank-clearing.com/de/pacs.008.001.08.ch.02"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://www.six-interbank-clearing.com/de/pacs.008.001.08.ch.02 pacs.008.001.08.ch.02.xsd">
+  <FIToFICstmrCdtTrf>
+    <GrpHdr>
+      <MsgId>{{ msg_id }}</MsgId>
+      <CreDtTm>{{ created_at }}</CreDtTm>
+      <NbOfTxs>1</NbOfTxs>
+      <SttlmInf>
+        <SttlmMtd>CLRG</SttlmMtd>
+        <ClrSys>
+          <Cd>SIC</Cd>
+        </ClrSys>
+      </SttlmInf>
+    </GrpHdr>
+    <CdtTrfTxInf>
+      <PmtId>
+        <EndToEndId>{{ end_to_end_id }}</EndToEndId>
+        <TxId>{{ tx_id }}</TxId>
+        <UETR>{{ uetr }}</UETR>
+      </PmtId>
+      <PmtTpInf>
+        <LclInstrm>
+          <Prtry>CSTPMT</Prtry>
+        </LclInstrm>
+      </PmtTpInf>
+      <IntrBkSttlmAmt Ccy="{{ currency }}">{{ amount }}</IntrBkSttlmAmt>
+      <IntrBkSttlmDt>{{ value_date }}</IntrBkSttlmDt>
+      <ChrgBr>SHAR</ChrgBr>
+      <InstgAgt>
+        <FinInstnId>
+          <ClrSysMmbId>
+            <ClrSysId><Cd>CHSIC</Cd></ClrSysId>
+            <MmbId>{{ debtor_iid }}</MmbId>
+          </ClrSysMmbId>
+        </FinInstnId>
+      </InstgAgt>
+      <InstdAgt>
+        <FinInstnId>
+          <ClrSysMmbId>
+            <ClrSysId><Cd>CHSIC</Cd></ClrSysId>
+            <MmbId>{{ creditor_iid }}</MmbId>
+          </ClrSysMmbId>
+        </FinInstnId>
+      </InstdAgt>
+      <Dbtr>
+        <Nm>{{ debtor_name }}</Nm>
+      </Dbtr>
+      <DbtrAcct>
+        <Id><IBAN>{{ debtor_iban }}</IBAN></Id>
+      </DbtrAcct>
+      <DbtrAgt>
+        <FinInstnId>
+          <ClrSysMmbId>
+            <ClrSysId><Cd>CHSIC</Cd></ClrSysId>
+            <MmbId>{{ debtor_iid }}</MmbId>
+          </ClrSysMmbId>
+        </FinInstnId>
+      </DbtrAgt>
+      <CdtrAgt>
+        <FinInstnId>
+          <ClrSysMmbId>
+            <ClrSysId><Cd>CHSIC</Cd></ClrSysId>
+            <MmbId>{{ creditor_iid }}</MmbId>
+          </ClrSysMmbId>
+        </FinInstnId>
+      </CdtrAgt>
+      <Cdtr>
+        <Nm>{{ creditor_name }}</Nm>
+      </Cdtr>
+      <CdtrAcct>
+        <Id><IBAN>{{ creditor_iban }}</IBAN></Id>
+      </CdtrAcct>
+      {% if remittance %}
+      <RmtInf>
+        <Ustrd>{{ remittance }}</Ustrd>
+      </RmtInf>
+      {% endif %}
+    </CdtTrfTxInf>
+  </FIToFICstmrCdtTrf>
+</Document>
