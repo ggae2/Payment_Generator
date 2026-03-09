@@ -8,7 +8,7 @@ REGISTRY = {
         "pacs.008": {
             "label":    "FI-to-FI Customer Credit Transfer (SIC)",
             "template": "sic/pacs.008.001.08.ch.02.xml.j2",
-            "xsd":      "sic/pacs.008.001.08.ch.02.xsd",
+            "xsd":      "SIC/pacs.008.001.08.ch.02.xsd",
             "fields": [
                 {"name": "msg_id",        "label": "Message ID",          "type": "string",  "required": False, "default": "auto"},
                 {"name": "debtor_name",   "label": "Debtor Name",         "type": "string",  "required": True},
