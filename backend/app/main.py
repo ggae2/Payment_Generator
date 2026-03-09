@@ -22,7 +22,10 @@ async def startup_event():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+   allow_origins=[
+    "http://localhost:5173",
+    "https://payment-generator-nu.vercel.app"
+],
     allow_methods=["*"],
     allow_headers=["*"],
 )
