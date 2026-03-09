@@ -59,6 +59,17 @@ def build_message(scheme: str, msg_type: str, params: dict, validate: bool = Tru
     if not params.get("tx_id"):
         params["tx_id"] = f"{datetime.utcnow().strftime('%Y%m%d')}-1-{uuid.uuid4().hex[:4].upper()}"
 
+    if not params.get("cxl_id"):
+        raw = f"CXL-{uuid.uuid4().hex[:12].upper()}"
+        params["cxl_id"] = raw[:35]
+    if not params.get("assgnmt_id"):
+        raw = f"ASSGNMT-{uuid.uuid4().hex[:8].upper()}"
+        params["assgnmt_id"] = raw[:35]
+    if not params.get("orig_msg_nm_id"):
+        params["orig_msg_nm_id"] = "pacs.008.001.08"
+    if not params.get("cxl_reason_code"):
+        params["cxl_reason_code"] = "CUST"
+
     try:
         template  = jinja_env.get_template(entry["template"])
     except TemplateNotFound:

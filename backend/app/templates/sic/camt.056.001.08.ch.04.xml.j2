@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="http://www.six-interbank-clearing.com/de/camt.056.001.08.ch.04" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <FIToFIPmtCxlReq>
+    <Assgnmt>
+      <Id>{{ assgnmt_id }}</Id>
+      <Assgnr>
+        <Agt>
+          <FinInstnId>
+            <ClrSysMmbId>
+              <ClrSysId>
+                <Cd>CHSIC</Cd>
+              </ClrSysId>
+              <MmbId>{{ assgnr_iid }}</MmbId>
+            </ClrSysMmbId>
+            <Othr>
+              <Id>{{ assgnr_iid }}</Id>
+            </Othr>
+          </FinInstnId>
+        </Agt>
+      </Assgnr>
+      <Assgne>
+        <Agt>
+          <FinInstnId>
+            <ClrSysMmbId>
+              <ClrSysId>
+                <Cd>CHSIC</Cd>
+              </ClrSysId>
+              <MmbId>{{ assgne_iid }}</MmbId>
+            </ClrSysMmbId>
+          </FinInstnId>
+        </Agt>
+      </Assgne>
+      <CreDtTm>{{ created_at }}</CreDtTm>
+    </Assgnmt>
+    <Undrlyg>
+      <TxInf>
+        <CxlId>{{ cxl_id }}</CxlId>
+        <OrgnlGrpInf>
+          <OrgnlMsgId>{{ orig_msg_id }}</OrgnlMsgId>
+          <OrgnlMsgNmId>{{ orig_msg_nm_id }}</OrgnlMsgNmId>
+        </OrgnlGrpInf>
+        <OrgnlTxId>{{ orig_tx_id }}</OrgnlTxId>
+        {% if orig_uetr %}
+        <OrgnlUETR>{{ orig_uetr }}</OrgnlUETR>
+        {% endif %}
+        <OrgnlIntrBkSttlmAmt Ccy="{{ orig_currency }}">{{ orig_amount }}</OrgnlIntrBkSttlmAmt>
+        <OrgnlIntrBkSttlmDt>{{ orig_value_date }}</OrgnlIntrBkSttlmDt>
+        <CxlRsnInf>
+          <Orgtr>
+            <Nm>{{ assgnr_name if assgnr_name else assgnr_iid }}</Nm>
+          </Orgtr>
+          <Rsn>
+            <Cd>{{ cxl_reason_code }}</Cd>
+          </Rsn>
+          {% if cxl_reason_info %}
+          <AddtlInf>{{ cxl_reason_info }}</AddtlInf>
+          {% endif %}
+        </CxlRsnInf>
+      </TxInf>
+    </Undrlyg>
+  </FIToFIPmtCxlReq>
+</Document>

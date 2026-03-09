@@ -80,10 +80,11 @@ const Field = ({ label, value, onChange, mono, children }) => (
 )
 
 export default function FormPanel({ onFilesGenerated, onSelectFile }) {
-  const [form, setForm]       = useState(DEFAULT)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState(null)
-  const [success, setSuccess] = useState(false)
+  const [form, setForm]        = useState(DEFAULT)
+  const [loading, setLoading]  = useState(false)
+  const [error, setError]      = useState(null)
+  const [success, setSuccess]  = useState(false)
+  const [lastPacs008, setLastPacs008] = useState(null)
 
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}))
   const applyPreset = (key) => setForm(p => ({...p, ...PRESETS[key]}))
@@ -118,8 +119,49 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
       const file = { name: filename, content: text }
       onFilesGenerated([file])
       onSelectFile(file)
+      // Parse generated XML to extract fields needed for recall
+      const parser = new DOMParser()
+      const xmlDoc = parser.parseFromString(text, 'text/xml')
+      const msgId   = xmlDoc.querySelector('MsgId')?.textContent  ?? ''
+      const txId    = xmlDoc.querySelector('TxId')?.textContent   ?? ''
+      const uetr    = xmlDoc.querySelector('UETR')?.textContent   ?? ''
+      const sttlmDt = xmlDoc.querySelector('IntrBkSttlmDt')?.textContent ?? new Date().toISOString().slice(0, 10)
+      setLastPacs008({
+        orig_msg_id:     msgId,
+        orig_tx_id:      txId,
+        orig_uetr:       uetr,
+        orig_amount:     parseFloat(form.amount),
+        orig_currency:   form.currency,
+        orig_value_date: sttlmDt,
+        assgnr_iid:      form.debtor_iid,
+        assgne_iid:      form.creditor_iid,
+      })
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
+    } catch(e) {
+      const detail = e.response?.data?.detail
+      const msg = typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map(d => d.msg || JSON.stringify(d)).join('\n')
+          : e.message
+      setError(msg)
+    }
+    setLoading(false)
+  }
+
+  const cancelLast = async () => {
+    if (!lastPacs008) return
+    setLoading(true); setError(null)
+    try {
+      const resp = await generateMessage('sic', 'camt.056', lastPacs008)
+      const text = await resp.data.text()
+      const ts   = new Date().toISOString().slice(0, 10)
+      const filename = `camt056_${lastPacs008.assgnr_iid}_to_${lastPacs008.assgne_iid}_${ts}.xml`
+      const file = { name: filename, content: text }
+      onFilesGenerated([file])
+      onSelectFile(file)
+      setLastPacs008(null)
     } catch(e) {
       const detail = e.response?.data?.detail
       const msg = typeof detail === 'string'
@@ -252,7 +294,27 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
         </div>
       )}
 
-      <div style={{ display:'flex', gap:8 }}>
+      <div style={{ display:'flex', gap:8, flexDirection:'column' }}>
+      {lastPacs008 && (
+        <button
+          onClick={cancelLast}
+          disabled={loading}
+          style={{
+            width:'100%', padding:'8px',
+            borderRadius:6,
+            background:'transparent',
+            border:'1px solid var(--warning, #f59e0b)',
+            color:'var(--warning, #f59e0b)',
+            cursor: loading ? 'default' : 'pointer',
+            fontFamily:"'Inter', sans-serif",
+            fontSize:12, fontWeight:600,
+            transition:'all 0.15s ease',
+            opacity: loading ? 0.5 : 1,
+          }}
+        >
+          ↩ Recall last transfer (camt.056)
+        </button>
+      )}
         <button onClick={submit} disabled={loading} style={{
           flex:1, padding:'10px',
           borderRadius: 6,
