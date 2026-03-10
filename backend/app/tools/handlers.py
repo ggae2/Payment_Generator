@@ -42,15 +42,20 @@ def handle_tool_call(name: str, inputs: dict) -> dict:
         files    = []
         ref_amt  = None
 
+        shared_uetr     = None  # reused across duplicate files
+        shared_e2e_id   = None
+
         for i in range(count):
             bank   = random.choice(BANKS)
             amount = round(random.uniform(amin, amax), 2)
             vdate  = date.today() + timedelta(days=random.randint(0, 3))
 
-            if scenario == "duplicate"    and i > 0: amount = ref_amt
-            if scenario == "high_value":             amount = round(random.uniform(100_000, 10_000_000), 2)
-            if scenario == "future_dates":           vdate  = date.today() + timedelta(days=random.randint(5, 30))
+            if scenario == "high_value":   amount = round(random.uniform(100_000, 10_000_000), 2)
+            if scenario == "future_dates": vdate  = date.today() + timedelta(days=random.randint(5, 30))
             if i == 0: ref_amt = amount
+            # Duplicate: identical amount + same UETR/E2EId — simulates true payment duplicates
+            if scenario == "duplicate" and i > 0:
+                amount = ref_amt
 
             creditor_iban = inputs["creditor_iban"]
             # invalid_iban: corrupt the last file intentionally — skip XSD validation so it can still be built
@@ -58,6 +63,11 @@ def handle_tool_call(name: str, inputs: dict) -> dict:
             if is_bad:
                 creditor_iban = "CH00INVALID000000000"
 
+            import uuid as _uuid
+            if scenario == "duplicate":
+                if i == 0:
+                    shared_uetr   = str(_uuid.uuid4())
+                    shared_e2e_id = f"E2E-DUP-{_uuid.uuid4().hex[:8].upper()}"
             params = {
                 "debtor_name":    bank["name"],
                 "debtor_iban":    bank["iban"],
@@ -68,6 +78,10 @@ def handle_tool_call(name: str, inputs: dict) -> dict:
                 "amount":         amount,
                 "currency":       inputs.get("currency", "CHF"),
                 "value_date":     str(vdate),
+                # Inject shared identifiers for true duplicate simulation
+                **(  {"uetr": shared_uetr, "end_to_end_id": shared_e2e_id}
+                     if scenario == "duplicate" and shared_uetr else {}
+                  ),
             }
             try:
                 xml = build_message("sic", "pacs.008", params, validate=not is_bad)
