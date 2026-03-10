@@ -1,4 +1,8 @@
+import { useState } from 'react'
+
 export default function XmlPreview({ file }) {
+  const [copied, setCopied] = useState(false)
+
   if (!file) return (
     <div style={{
       flex:1, display:'flex', flexDirection:'column', alignItems:'center',
@@ -30,6 +34,13 @@ export default function XmlPreview({ file }) {
     a.click()
   }
 
+  const copy = () => {
+    navigator.clipboard.writeText(file.content).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }
+
   // Syntax highlighting
   const highlighted = file.content
     .replace(/&/g, '&amp;')
@@ -51,46 +62,63 @@ export default function XmlPreview({ file }) {
       }}>
         <span className="mono" style={{ color:'var(--text-1)', fontSize:12, fontWeight:500 }}>{file.name}</span>
         <span className="mono" style={{ color:'var(--text-3)', fontSize:10 }}>{lineCount} lines</span>
-        <button onClick={download} style={{
-          marginLeft:'auto', padding:'4px 12px',
-          border:'1px solid var(--accent)', borderRadius:4,
-          background:'var(--accent-soft)', color:'var(--accent)',
-          cursor:'pointer', fontFamily:'IBM Plex Mono,monospace', fontSize:10,
-          fontWeight:500,
-          transition:'all 0.15s ease',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background='var(--accent)'; e.currentTarget.style.color='#fff'; }}
-        onMouseLeave={e => { e.currentTarget.style.background='var(--accent-soft)'; e.currentTarget.style.color='var(--accent)'; }}
-        >
-          ↓ Download
-        </button>
+        <div style={{ marginLeft:'auto', display:'flex', gap:6 }}>
+          <button onClick={copy} style={{
+            padding:'4px 12px',
+            border:'1px solid var(--border)', borderRadius:4,
+            background: copied ? 'var(--success-soft)' : 'transparent',
+            color: copied ? 'var(--success)' : 'var(--text-3)',
+            cursor:'pointer', fontFamily:'IBM Plex Mono,monospace', fontSize:10,
+            fontWeight:500, transition:'all 0.15s ease',
+          }}
+          onMouseEnter={e => { if (!copied) { e.currentTarget.style.borderColor='var(--text-3)'; e.currentTarget.style.color='var(--text-1)'; }}}
+          onMouseLeave={e => { if (!copied) { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.color='var(--text-3)'; }}}
+          >
+            {copied ? '✓ Copied' : '⎘ Copy'}
+          </button>
+          <button onClick={download} style={{
+            padding:'4px 12px',
+            border:'1px solid var(--accent)', borderRadius:4,
+            background:'var(--accent-soft)', color:'var(--accent)',
+            cursor:'pointer', fontFamily:'IBM Plex Mono,monospace', fontSize:10,
+            fontWeight:500, transition:'all 0.15s ease',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background='var(--accent)'; e.currentTarget.style.color='#fff'; }}
+          onMouseLeave={e => { e.currentTarget.style.background='var(--accent-soft)'; e.currentTarget.style.color='var(--accent)'; }}
+          >
+            ↓ Download
+          </button>
+        </div>
       </div>
 
-      {/* Line numbers + XML */}
-      <div style={{ flex:1, overflow:'auto', display:'flex' }}>
-        <div style={{
-          background:'var(--bg-1)', borderRight:'1px solid var(--border)',
-          padding:'12px 10px', textAlign:'right', userSelect:'none', flexShrink:0,
-          minWidth:40,
-        }}>
-          {file.content.split('\n').map((_,i) => (
-            <div key={i} className="mono" style={{
-              color:'var(--text-3)', fontSize:11, lineHeight:'1.7',
-              minWidth:24,
-            }}>
-              {i+1}
-            </div>
-          ))}
+      {/* Single-scroll container — line numbers + code scroll as one unit */}
+      <div style={{ flex:1, overflow:'auto', background:'var(--bg-0)' }}>
+        <div style={{ display:'flex', minWidth:'max-content', minHeight:'100%' }}>
+          {/* Line numbers — sticky on left so they stay visible on horizontal scroll */}
+          <div style={{
+            position:'sticky', left:0, zIndex:1,
+            background:'var(--bg-1)', borderRight:'1px solid var(--border)',
+            padding:'12px 10px', textAlign:'right', userSelect:'none', flexShrink:0,
+            minWidth:44, alignSelf:'flex-start',
+          }}>
+            {file.content.split('\n').map((_,i) => (
+              <div key={i} className="mono" style={{
+                color:'var(--text-3)', fontSize:11, lineHeight:'1.7', minWidth:24,
+              }}>
+                {i+1}
+              </div>
+            ))}
+          </div>
+          <pre style={{
+            flex:1, margin:0, padding:'12px 16px',
+            fontFamily:'IBM Plex Mono,monospace', fontSize:11,
+            lineHeight:1.7, color:'var(--text-2)',
+            background:'var(--bg-0)', whiteSpace:'pre',
+            fontWeight:400,
+          }}
+            dangerouslySetInnerHTML={{ __html: highlighted }}
+          />
         </div>
-        <pre style={{
-          flex:1, margin:0, padding:'12px 16px',
-          fontFamily:'IBM Plex Mono,monospace', fontSize:11,
-          lineHeight:1.7, color:'var(--text-2)',
-          background:'var(--bg-0)', overflow:'auto',
-          fontWeight:400,
-        }}
-          dangerouslySetInnerHTML={{ __html: highlighted }}
-        />
       </div>
     </div>
   )

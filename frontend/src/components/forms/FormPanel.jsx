@@ -303,14 +303,16 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
             width:'100%', padding:'8px',
             borderRadius:6,
             background:'transparent',
-            border:'1px solid var(--warning, #f59e0b)',
-            color:'var(--warning, #f59e0b)',
+            border:'1px solid var(--warning)',
+            color:'var(--warning)',
             cursor: loading ? 'default' : 'pointer',
             fontFamily:"'Inter', sans-serif",
             fontSize:12, fontWeight:600,
             transition:'all 0.15s ease',
             opacity: loading ? 0.5 : 1,
           }}
+          onMouseEnter={e => { if (!loading) { e.currentTarget.style.background='var(--warning-soft)'; }}}
+          onMouseLeave={e => { e.currentTarget.style.background='transparent'; }}
         >
           ↩ Recall last transfer (camt.056)
         </button>

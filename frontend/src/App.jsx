@@ -108,28 +108,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Message type bar */}
-      <div style={{
-        background: 'var(--bg-0)',
-        padding: '6px 24px',
-        display: 'flex',
-        gap: 20,
-        flexShrink: 0,
-        borderBottom: '1px solid var(--border)',
-      }}>
-        {[
-          ['pacs.008', 'Credit Transfer'],
-          ['pain.001', 'CT Initiation'],
-          ['pacs.002', 'Payment Status'],
-          ['camt.054', 'Notification'],
-        ].map(([code, label]) => (
-          <div key={code} style={{ display:'flex', alignItems:'center', gap: 6 }}>
-            <span className="mono" style={{ color:'var(--text-2)', fontSize:10, fontWeight:500 }}>{code}</span>
-            <span style={{ color:'var(--text-3)', fontSize:10 }}>{label}</span>
-          </div>
-        ))}
-      </div>
-
       {/* Main */}
       <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
         {/* Left panel */}
@@ -155,9 +133,13 @@ export default function App() {
               gap: 4,
               flexWrap: 'wrap',
               flexShrink: 0,
+              alignItems: 'center',
             }}>
+              <span className="mono" style={{ color:'var(--text-3)', fontSize:10, marginRight:4 }}>
+                {generatedFiles.length} file{generatedFiles.length > 1 ? 's' : ''}
+              </span>
               {generatedFiles.map((f, i) => (
-                <button key={i} onClick={() => setSelected(f)} style={{
+                <button key={i} onClick={() => setSelected(f)} title={f.name} style={{
                   padding: '3px 10px',
                   border: selectedFile === f ? '1px solid var(--accent)' : '1px solid var(--border)',
                   borderRadius: 4,
@@ -167,6 +149,10 @@ export default function App() {
                   fontFamily: 'IBM Plex Mono, monospace',
                   fontSize: 11,
                   transition: 'all 0.15s ease',
+                  maxWidth: 200,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}>
                   {f.name}
                 </button>

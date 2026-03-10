@@ -171,9 +171,11 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
         {loading && (
           <div className="fade-in" style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 0' }}>
             <Tag color="var(--success)">AI</Tag>
-            <span className="mono cursor" style={{ color:'var(--text-3)', fontSize:11 }}>
-              Generating
-            </span>
+            <div style={{ display:'flex', gap:4, alignItems:'center', marginLeft:2 }}>
+              <span className="thinking-dot"/>
+              <span className="thinking-dot"/>
+              <span className="thinking-dot"/>
+            </div>
           </div>
         )}
         <div ref={endRef} />
