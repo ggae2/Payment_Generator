@@ -15,11 +15,14 @@ const LOADING_STEPS = [
   'Building XML…',
 ]
 
-/* ── Inline consent card ── */
+/* ── Consent overlay (shown on first send attempt) ── */
 function ConsentCard({ onAccept }) {
   return (
     <div style={{
-      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'absolute', inset: 0, zIndex: 20,
+      background: 'rgba(0,0,0,0.55)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 32,
     }}>
       <div style={{
@@ -191,9 +194,11 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
   const [loadStep, setLoadStep]   = useState(0)
   const [ctxOpen, setCtxOpen]     = useState(true)
   const [consented, setConsented] = useState(false)
+  const [showConsent, setShowConsent] = useState(false)
   const [clientCtx, setCtx]       = useState({ creditor_name:'', creditor_iban:'', creditor_iid:'', creditor_bic:'' })
   const endRef    = useRef(null)
   const stepTimer = useRef(null)
+  const pendingRef = useRef(null)
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
 
@@ -211,12 +216,12 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
   }, [loading])
 
   const clearSession = () => {
-    setMessages([]); setHistory([]); setConsented(false)
+    setMessages([]); setHistory([]); setConsented(false); setShowConsent(false)
+    pendingRef.current = null
   }
 
-  const send = async (text) => {
-    const msg = text || input.trim()
-    if (!msg || loading) return
+  /* Actual API call — bypasses consent check */
+  const executeSend = async (msg) => {
     setInput('')
     setMessages(prev => [...prev, { role: 'user', text: msg, ts: Date.now() }])
     setLoading(true)
@@ -243,8 +248,30 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
     setLoading(false)
   }
 
+  /* Gate: show consent on first attempt, then send */
+  const send = (text) => {
+    const msg = text || input.trim()
+    if (!msg || loading) return
+    if (!consented) {
+      pendingRef.current = msg
+      setShowConsent(true)
+      return
+    }
+    executeSend(msg)
+  }
+
+  const handleAccept = () => {
+    setConsented(true)
+    setShowConsent(false)
+    if (pendingRef.current) {
+      const msg = pendingRef.current
+      pendingRef.current = null
+      executeSend(msg)
+    }
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-0)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-0)', position: 'relative' }}>
 
       {/* ── Context bar ── */}
       <div style={{ background: 'var(--bg-1)', borderBottom: '1px solid var(--border)' }}>
@@ -290,12 +317,8 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
         )}
       </div>
 
-      {/* ── Consent card OR chat ── */}
-      {!consented
-        ? <ConsentCard onAccept={() => setConsented(true)} />
-        : <>
-          {/* ── Messages ── */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+      {/* ── Messages ── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
 
             {messages.map((m, i) => (
               <div key={i} className="fade-in" style={{
@@ -407,8 +430,9 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
               }}>Send</button>
             </div>
           </div>
-        </>
-      }
+
+      {/* ── Consent overlay — appears on first send, not on page load ── */}
+      {showConsent && <ConsentCard onAccept={handleAccept} />}
     </div>
   )
 }
