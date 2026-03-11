@@ -15,6 +15,68 @@ const LOADING_STEPS = [
   'Building XML…',
 ]
 
+/* ── Inline consent card ── */
+function ConsentCard({ onAccept }) {
+  return (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 32,
+    }}>
+      <div style={{
+        maxWidth: 440, width: '100%',
+        background: 'var(--bg-1)',
+        border: '1px solid var(--border-accent)',
+        borderRadius: 10,
+        padding: '28px 32px',
+      }}>
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ margin: '0 0 4px', color: 'var(--text-1)', fontWeight: 700, fontSize: 14 }}>
+            Data Privacy Notice
+          </p>
+          <p style={{ margin: 0, color: 'var(--text-3)', fontSize: 11 }}>
+            Please read before using the Agent
+          </p>
+        </div>
+
+        {[
+          ['Purpose',          'Generates ISO 20022 XML test files for SIC/SEPA interbank testing only.'],
+          ['Prohibited data',  'Do not enter real customer data, production IBANs, or any PII.'],
+          ['AI transmission',  'Inputs are processed by Anthropic Claude. Ensure compliance with your organisation\'s data policy.'],
+        ].map(([title, body]) => (
+          <div key={title} style={{
+            display: 'flex', gap: 12, marginBottom: 10,
+            padding: '10px 14px',
+            background: 'var(--bg-2)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+          }}>
+            <div style={{ width: 2, flexShrink: 0, background: 'var(--border-accent)', borderRadius: 2 }} />
+            <div>
+              <p style={{ margin: '0 0 2px', color: 'var(--text-2)', fontSize: 11, fontWeight: 600,
+                fontFamily: 'IBM Plex Mono,monospace', letterSpacing: '0.04em' }}>{title.toUpperCase()}</p>
+              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 12, lineHeight: 1.6 }}>{body}</p>
+            </div>
+          </div>
+        ))}
+
+        <button onClick={onAccept} style={{
+          width: '100%', marginTop: 16,
+          padding: '10px 0', borderRadius: 6,
+          background: 'var(--accent)', border: 'none',
+          color: '#fff', fontSize: 13, fontWeight: 600,
+          cursor: 'pointer', fontFamily: "'Inter',sans-serif",
+          transition: 'opacity 0.15s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
+          I understand — start session
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /* ── Tag badge ── */
 const Tag = ({ children, color = 'var(--accent)' }) => (
   <span className="mono" style={{
@@ -128,6 +190,7 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
   const [loading, setLoading]     = useState(false)
   const [loadStep, setLoadStep]   = useState(0)
   const [ctxOpen, setCtxOpen]     = useState(true)
+  const [consented, setConsented] = useState(false)
   const [clientCtx, setCtx]       = useState({ creditor_name:'', creditor_iban:'', creditor_iid:'', creditor_bic:'' })
   const endRef    = useRef(null)
   const stepTimer = useRef(null)
@@ -148,7 +211,7 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
   }, [loading])
 
   const clearSession = () => {
-    setMessages([]); setHistory([])
+    setMessages([]); setHistory([]); setConsented(false)
   }
 
   const send = async (text) => {
@@ -227,119 +290,122 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
         )}
       </div>
 
-      {/* ── Messages ── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+      {/* ── Consent card OR chat ── */}
+      {!consented
+        ? <ConsentCard onAccept={() => setConsented(true)} />
+        : <>
+          {/* ── Messages ── */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
 
-        {messages.map((m, i) => (
-          <div key={i} className="fade-in" style={{
-            marginBottom: 14, display: 'flex', flexDirection: 'column',
-            alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
-          }}>
-            {/* Label row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-              <Tag color={m.role === 'user' ? 'var(--accent)' : m.error ? 'var(--error)' : 'var(--success)'}>
-                {m.role === 'user' ? 'YOU' : m.error ? 'ERR' : 'AGENT'}
-              </Tag>
-              <Ts ts={m.ts} />
-              {m.text && <CopyBtn text={m.text} />}
-            </div>
-
-            {/* Bubble */}
-            <div style={{
-              maxWidth: '85%',
-              background: m.role === 'user' ? 'var(--primary-soft)' : m.error ? 'var(--error-soft)' : 'var(--bg-1)',
-              border: `1px solid ${m.role === 'user' ? 'rgba(59,130,246,0.2)' : m.error ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
-              borderRadius: 8, padding: '10px 14px',
-            }}>
-              {m.role === 'user'
-                ? <p style={{ margin: 0, color: 'var(--text-1)', fontSize: 13, lineHeight: 1.6 }}>{m.text}</p>
-                : <Markdown text={m.text} />
-              }
-
-              {/* Generated files */}
-              {m.files?.length > 0 && (
-                <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {m.files.map((f, j) => (
-                    <div key={j} style={{ display: 'flex', gap: 3 }}>
-                      <button onClick={() => onSelectFile(f)} style={{
-                        padding: '3px 10px', borderRadius: '4px 0 0 4px',
-                        background: 'var(--success-soft)', border: '1px solid rgba(34,197,94,0.25)',
-                        borderRight: 'none',
-                        color: 'var(--success)', cursor: 'pointer',
-                        fontFamily: 'IBM Plex Mono,monospace', fontSize: 10, fontWeight: 500,
-                      }}>⊞ {f.name}</button>
-                      <button onClick={() => downloadFile(f)} title="Download" style={{
-                        padding: '3px 8px', borderRadius: '0 4px 4px 0',
-                        background: 'var(--success-soft)', border: '1px solid rgba(34,197,94,0.25)',
-                        color: 'var(--success)', cursor: 'pointer', fontSize: 11,
-                      }}>↓</button>
-                    </div>
-                  ))}
+            {messages.map((m, i) => (
+              <div key={i} className="fade-in" style={{
+                marginBottom: 14, display: 'flex', flexDirection: 'column',
+                alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
+              }}>
+                {/* Label row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                  <Tag color={m.role === 'user' ? 'var(--accent)' : m.error ? 'var(--error)' : 'var(--success)'}>
+                    {m.role === 'user' ? 'YOU' : m.error ? 'ERR' : 'AGENT'}
+                  </Tag>
+                  <Ts ts={m.ts} />
+                  {m.text && <CopyBtn text={m.text} />}
                 </div>
-              )}
+
+                {/* Bubble */}
+                <div style={{
+                  maxWidth: '85%',
+                  background: m.role === 'user' ? 'var(--primary-soft)' : m.error ? 'var(--error-soft)' : 'var(--bg-1)',
+                  border: `1px solid ${m.role === 'user' ? 'rgba(59,130,246,0.2)' : m.error ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
+                  borderRadius: 8, padding: '10px 14px',
+                }}>
+                  {m.role === 'user'
+                    ? <p style={{ margin: 0, color: 'var(--text-1)', fontSize: 13, lineHeight: 1.6 }}>{m.text}</p>
+                    : <Markdown text={m.text} />
+                  }
+
+                  {/* Generated files */}
+                  {m.files?.length > 0 && (
+                    <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {m.files.map((f, j) => (
+                        <div key={j} style={{ display: 'flex', gap: 3 }}>
+                          <button onClick={() => onSelectFile(f)} style={{
+                            padding: '3px 10px', borderRadius: '4px 0 0 4px',
+                            background: 'var(--success-soft)', border: '1px solid rgba(34,197,94,0.25)',
+                            borderRight: 'none',
+                            color: 'var(--success)', cursor: 'pointer',
+                            fontFamily: 'IBM Plex Mono,monospace', fontSize: 10, fontWeight: 500,
+                          }}>⊞ {f.name}</button>
+                          <button onClick={() => downloadFile(f)} title="Download" style={{
+                            padding: '3px 8px', borderRadius: '0 4px 4px 0',
+                            background: 'var(--success-soft)', border: '1px solid rgba(34,197,94,0.25)',
+                            color: 'var(--success)', cursor: 'pointer', fontSize: 11,
+                          }}>↓</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Loading indicator */}
+            {loading && (
+              <div className="fade-in" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+                <Tag color="var(--success)">AGENT</Tag>
+                <span style={{ color: 'var(--text-3)', fontSize: 12, fontStyle: 'italic' }}>
+                  {LOADING_STEPS[loadStep]}
+                </span>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <span className="thinking-dot"/><span className="thinking-dot"/><span className="thinking-dot"/>
+                </div>
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+
+          {/* ── Input bar + quick chips ── */}
+          <div style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-1)', padding: '10px 20px 12px' }}>
+
+            {/* Quick scenario chips — always visible */}
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+              {EXAMPLES.map((ex, i) => (
+                <button key={i} onClick={() => send(ex.text)} disabled={loading} style={{
+                  padding: '3px 10px', borderRadius: 20,
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--text-3)', cursor: loading ? 'default' : 'pointer',
+                  fontFamily: 'IBM Plex Mono,monospace', fontSize: 10, fontWeight: 600,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)' }}}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-3)' }}
+                >{ex.label}</button>
+              ))}
+            </div>
+
+            {/* Text input row */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+                placeholder="Describe your test scenario…"
+                disabled={loading}
+                style={{
+                  flex: 1, background: 'var(--bg-2)', border: '1px solid var(--border)',
+                  borderRadius: 6, padding: '9px 12px', color: 'var(--text-1)',
+                  fontFamily: "'Inter',sans-serif", fontSize: 13,
+                  outline: 'none', transition: 'border-color 0.15s',
+                  opacity: loading ? 0.5 : 1,
+                }}
+              />
+              <button onClick={() => send()} disabled={loading} style={{
+                padding: '9px 20px', borderRadius: 6,
+                background: loading ? 'transparent' : 'var(--accent)',
+                border: loading ? '1px solid var(--border)' : '1px solid var(--accent)',
+                color: loading ? 'var(--text-3)' : '#fff',
+                cursor: loading ? 'default' : 'pointer',
+                fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 600,
+                transition: 'all 0.15s',
+              }}>Send</button>
             </div>
           </div>
-        ))}
-
-        {/* Loading indicator */}
-        {loading && (
-          <div className="fade-in" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
-            <Tag color="var(--success)">AGENT</Tag>
-            <span style={{ color: 'var(--text-3)', fontSize: 12, fontStyle: 'italic' }}>
-              {LOADING_STEPS[loadStep]}
-            </span>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span className="thinking-dot"/><span className="thinking-dot"/><span className="thinking-dot"/>
-            </div>
-          </div>
-        )}
-        <div ref={endRef} />
-      </div>
-
-      {/* ── Input bar + quick chips ── */}
-      <div style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-1)', padding: '10px 20px 12px' }}>
-
-        {/* Quick scenario chips — always visible */}
-        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
-          {EXAMPLES.map((ex, i) => (
-            <button key={i} onClick={() => send(ex.text)} disabled={loading} style={{
-              padding: '3px 10px', borderRadius: 20,
-              background: 'transparent', border: '1px solid var(--border)',
-              color: 'var(--text-3)', cursor: loading ? 'default' : 'pointer',
-              fontFamily: 'IBM Plex Mono,monospace', fontSize: 10, fontWeight: 600,
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)' }}}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-3)' }}
-            >{ex.label}</button>
-          ))}
-        </div>
-
-        {/* Text input row */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-            placeholder="Describe your test scenario…"
-            disabled={loading}
-            style={{
-              flex: 1, background: 'var(--bg-2)', border: '1px solid var(--border)',
-              borderRadius: 6, padding: '9px 12px', color: 'var(--text-1)',
-              fontFamily: "'Inter',sans-serif", fontSize: 13,
-              outline: 'none', transition: 'border-color 0.15s',
-              opacity: loading ? 0.5 : 1,
-            }}
-          />
-          <button onClick={() => send()} disabled={loading} style={{
-            padding: '9px 20px', borderRadius: 6,
-            background: loading ? 'transparent' : 'var(--accent)',
-            border: loading ? '1px solid var(--border)' : '1px solid var(--accent)',
-            color: loading ? 'var(--text-3)' : '#fff',
-            cursor: loading ? 'default' : 'pointer',
-            fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 600,
-            transition: 'all 0.15s',
-          }}>Send</button>
-        </div>
-      </div>
-    </div>
-  )
-}
+        </>
+      }

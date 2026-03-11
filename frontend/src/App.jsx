@@ -3,95 +3,11 @@ import AgentChat  from './components/chat/AgentChat'
 import FormPanel  from './components/forms/FormPanel'
 import XmlPreview from './components/preview/XmlPreview'
 
-function ConsentGate({ onAccept }) {
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.75)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24,
-    }}>
-      <div style={{
-        background: 'var(--bg-1)',
-        border: '1px solid var(--border-accent)',
-        borderRadius: 12,
-        padding: '32px 36px',
-        maxWidth: 480, width: '100%',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
-      }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8,
-            background: 'rgba(234,179,8,0.12)',
-            border: '1px solid rgba(234,179,8,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, flexShrink: 0,
-          }}>!</div>
-          <div>
-            <p style={{ margin: 0, color: 'var(--text-1)', fontWeight: 700, fontSize: 15 }}>Data Privacy Notice</p>
-            <p style={{ margin: 0, color: 'var(--text-3)', fontSize: 11, marginTop: 2 }}>Please read before proceeding</p>
-          </div>
-        </div>
-
-        {/* Items */}
-        {[
-          [
-            'Purpose',
-            'This tool generates ISO 20022 XML test files for SIC/SEPA interbank certification and integration testing only.',
-          ],
-          [
-            'Prohibited data',
-            'Do not enter real customer data, production IBANs, account numbers, or any personally identifiable information (PII).',
-          ],
-          [
-            'AI data transmission',
-            'Your inputs are sent to Anthropic Claude for processing. Ensure this complies with your organisation\'s data classification and AI usage policy.',
-          ],
-        ].map(([title, body]) => (
-          <div key={title} style={{
-            display: 'flex', gap: 12, marginBottom: 16,
-            background: 'var(--bg-2)', borderRadius: 8,
-            padding: '12px 14px',
-            border: '1px solid var(--border)',
-          }}>
-            <div>
-              <p style={{ margin: '0 0 3px', color: 'var(--text-1)', fontSize: 12, fontWeight: 600 }}>{title}</p>
-              <p style={{ margin: 0, color: 'var(--text-2)', fontSize: 12, lineHeight: 1.6 }}>{body}</p>
-            </div>
-          </div>
-        ))}
-
-        {/* CTA */}
-        <button onClick={onAccept} style={{
-          width: '100%', marginTop: 8,
-          padding: '12px 0', borderRadius: 8,
-          background: 'var(--accent)', border: 'none',
-          color: '#fff', fontSize: 13, fontWeight: 700,
-          cursor: 'pointer', letterSpacing: '0.01em',
-          fontFamily: "'Inter',sans-serif",
-          transition: 'opacity 0.15s',
-        }}
-        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        >
-          I understand — start session
-        </button>
-        <p style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 10, marginTop: 12, marginBottom: 0 }}>
-          This notice appears once per session and is not stored.
-        </p>
-      </div>
-    </div>
-  )
-}
-
 export default function App() {
   const [mode, setMode]             = useState('agent')
   const [generatedFiles, setFiles]  = useState([])
   const [selectedFile, setSelected] = useState(null)
   const [theme, setTheme]           = useState(() => localStorage.getItem('theme') || 'dark')
-  const [consented, setConsented]   = useState(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -107,7 +23,6 @@ export default function App() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', background:'var(--bg-0)' }}>
-      {!consented && <ConsentGate onAccept={() => setConsented(true)} />}
       {/* Header */}
       <header style={{
         background: 'var(--bg-1)',
