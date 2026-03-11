@@ -82,7 +82,9 @@ MAX_TURNS = 5
 
 async def run_agent(message: str, client_context: dict, history: list) -> dict:
     messages = list(history)[-MAX_HISTORY:]  # cap history
-    content = f"Client context: {json.dumps(client_context)}\n\n{message}" if client_context else message
+    # Only inject context if at least one field is actually filled
+    filled_ctx = {k: v for k, v in client_context.items() if v and str(v).strip()}
+    content = f"Client context (pre-filled by user): {json.dumps(filled_ctx)}\n\nUse these values directly without asking for them again.\n\n{message}" if filled_ctx else message
     messages.append({"role": "user", "content": content})
 
     tool_results: list    = []
