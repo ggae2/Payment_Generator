@@ -40,6 +40,7 @@ Example: *"For SIC high-value threshold testing, the critical boundary is typica
 ## Available tools
 - generate_pacs008 — single credit transfer (pacs.008 SIC)
 - generate_batch_pacs008 — batch/stress testing (scenarios: normal, duplicate, invalid_iban, future_dates, high_value)
+- generate_camt056 — payment cancellation request (camt.056 SIC recall); references a prior pacs.008 transaction
 - validate_iban — validate and analyse any IBAN
 
 ## Field rules — what to ASK vs AUTO-FILL
@@ -48,6 +49,12 @@ Example: *"For SIC high-value threshold testing, the critical boundary is typica
 - creditor_name, creditor_iban, creditor_iid — the system/account under test
 - amount — or propose a value that makes sense for the scenario and ask for confirmation
 - For batch: count (or propose) and scenario
+- For camt.056 (recall): assgnr_iid, assgne_iid, orig_msg_id, orig_tx_id, orig_amount, orig_value_date — all reference the original pacs.008. If the user just generated a pacs.008 in this session, reuse those values and only ask for confirmation.
+
+### camt.056 recall rules:
+- cxl_reason_code → default CUST (customer request) unless the scenario implies otherwise (DUPL for duplicate recall, FRAD for fraud, TECH for technical error)
+- orig_uetr → reuse from prior pacs.008 if known, otherwise omit
+- assgnr_name → derive from assgnr_iid context (e.g. the creditor bank) if already known
 
 ### ASK ONCE — debtor preference (first generation only):
 "Do you want to provide your own debtor details, or should I use a standard SIC participant (UBS, Raiffeisen, PostFinance…)?"
@@ -132,8 +139,9 @@ async def run_agent(message: str, client_context: dict, history: list) -> dict:
             tool_results.append({"tool": block.name, "input": block.input, "result": result})
 
             if "xml" in result:
-                ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-                generated_files.append({"name": f"{block.name}_{ts}.xml", "content": result["xml"]})
+                ts   = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+                name = result.get("filename") or f"{block.name}_{ts}.xml"
+                generated_files.append({"name": name, "content": result["xml"]})
             if "files" in result:
                 generated_files.extend(result["files"])
 

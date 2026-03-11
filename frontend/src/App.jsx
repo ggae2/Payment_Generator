@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
-import AgentChat  from './components/chat/AgentChat'
-import FormPanel  from './components/forms/FormPanel'
-import XmlPreview from './components/preview/XmlPreview'
+import AgentChat    from './components/chat/AgentChat'
+import FormPanel    from './components/forms/FormPanel'
+import XmlPreview   from './components/preview/XmlPreview'
+import useFilePanel from './hooks/useFilePanel'
 
 export default function App() {
-  const [mode, setMode]             = useState('agent')
-  const [generatedFiles, setFiles]  = useState([])
-  const [selectedFile, setSelected] = useState(null)
-  const [theme, setTheme]           = useState(() => localStorage.getItem('theme') || 'dark')
+  const [mode,  setMode]  = useState('agent')
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
+  const { files: generatedFiles, selected: selectedFile, setSelected, addFiles } = useFilePanel()
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -15,11 +15,6 @@ export default function App() {
   }, [theme])
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
-
-  const addFiles = (newFiles) => {
-    setFiles(prev => [...prev, ...newFiles])
-    if (newFiles.length > 0) setSelected(newFiles[0])
-  }
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', background:'var(--bg-0)' }}>

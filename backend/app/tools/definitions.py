@@ -47,6 +47,28 @@ TOOLS = [
         }
     },
     {
+        "name": "generate_camt056",
+        "description": "Generate a camt.056 SIC payment cancellation request (recall) referencing a previous pacs.008 transaction",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "assgnr_iid":     {"type": "string", "description": "Assignor IID — the bank sending the recall (6 digits)"},
+                "assgne_iid":     {"type": "string", "description": "Assignee IID — the bank receiving the recall (6 digits)"},
+                "orig_msg_id":    {"type": "string", "description": "Message ID of the original pacs.008"},
+                "orig_tx_id":     {"type": "string", "description": "Transaction ID of the original pacs.008"},
+                "orig_uetr":      {"type": "string", "description": "UETR of the original pacs.008 (UUID format)"},
+                "orig_amount":    {"type": "number", "description": "Amount of the original payment"},
+                "orig_currency":  {"type": "string", "enum": ["CHF", "EUR"], "default": "CHF"},
+                "orig_value_date":{"type": "string", "description": "Value date of the original payment YYYY-MM-DD"},
+                "cxl_reason_code":{"type": "string", "enum": ["CUST","DUPL","AGNT","UPAY","TECH","FRAD","CUTA","CURR"], "default": "CUST",
+                                   "description": "Cancellation reason code: CUST=customer request, DUPL=duplicate, FRAD=fraud, TECH=technical issue"},
+                "cxl_reason_info":{"type": "string", "description": "Free-text explanation for the recall"},
+                "assgnr_name":    {"type": "string", "description": "Name of the recalling bank"}
+            },
+            "required": ["assgnr_iid", "assgne_iid", "orig_msg_id", "orig_tx_id", "orig_amount", "orig_currency", "orig_value_date"]
+        }
+    },
+    {
         "name": "validate_iban",
         "description": "Validate an IBAN",
         "input_schema": {

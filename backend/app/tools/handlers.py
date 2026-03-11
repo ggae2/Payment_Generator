@@ -32,8 +32,16 @@ def _iban_mod97(iban: str) -> bool:
 
 def handle_tool_call(name: str, inputs: dict) -> dict:
     if name == "generate_pacs008":
+        from datetime import datetime as _dt
+        ts  = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
         xml = build_message("sic", "pacs.008", inputs)
-        return {"xml": xml.decode(), "message_type": "pacs.008"}
+        debitor_iid  = inputs.get("debtor_iid", "000000")
+        creditor_iid = inputs.get("creditor_iid", "000000")
+        return {
+            "xml":          xml.decode(),
+            "message_type": "pacs.008",
+            "filename":     f"pacs008_{debitor_iid}_to_{creditor_iid}_{ts}.xml",
+        }
 
     elif name == "generate_batch_pacs008":
         count    = min(int(inputs.get("count", 1)), 50)  # cap at 50 files
@@ -98,6 +106,23 @@ def handle_tool_call(name: str, inputs: dict) -> dict:
                 files.append({"name": f"pacs008_{i+1:03}_ERROR.txt", "content": str(exc), "invalid": True})
 
         return {"files": files, "count": len(files), "scenario": scenario}
+
+    elif name == "generate_camt056":
+        from datetime import datetime as _dt
+        import uuid as _uuid
+        params = dict(inputs)
+        # Auto-fill optional identifiers if not supplied
+        if not params.get("orig_msg_nm_id"):
+            params["orig_msg_nm_id"] = "pacs.008.001.08"
+        if not params.get("msg_id"):
+            params["msg_id"] = f"CXL-{_dt.utcnow().strftime('%Y%m%d')}-{_uuid.uuid4().hex[:6].upper()}"
+        ts = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
+        xml = build_message("sic", "camt.056", params)
+        return {
+            "xml":          xml.decode(),
+            "message_type": "camt.056",
+            "filename":     f"camt056_{params['assgnr_iid']}_to_{params['assgne_iid']}_{ts}.xml",
+        }
 
     elif name == "validate_iban":
         iban    = inputs["iban"].replace(" ", "").upper()

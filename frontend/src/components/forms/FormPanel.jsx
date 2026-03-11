@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { generateMessage } from '../../services/api'
+import { generateMessage }  from '../../services/api'
+import { flattenApiError }  from '../../hooks/useFilePanel'
 
 const PRESETS = {
   UBS:  { debtor_name:'UBS AG',         debtor_iban:'CH9300762011623852957', debtor_bic:'UBSWCHZH80A', debtor_iid:'000762' },
@@ -139,13 +140,7 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch(e) {
-      const detail = e.response?.data?.detail
-      const msg = typeof detail === 'string'
-        ? detail
-        : Array.isArray(detail)
-          ? detail.map(d => d.msg || JSON.stringify(d)).join('\n')
-          : e.message
-      setError(msg)
+      setError(flattenApiError(e))
     }
     setLoading(false)
   }
@@ -163,13 +158,7 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
       onSelectFile(file)
       setLastPacs008(null)
     } catch(e) {
-      const detail = e.response?.data?.detail
-      const msg = typeof detail === 'string'
-        ? detail
-        : Array.isArray(detail)
-          ? detail.map(d => d.msg || JSON.stringify(d)).join('\n')
-          : e.message
-      setError(msg)
+      setError(flattenApiError(e))
     }
     setLoading(false)
   }

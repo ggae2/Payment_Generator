@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
-import { agentChat } from '../../services/api'
+import { useState, useRef, useEffect }        from 'react'
+import { agentChat }                           from '../../services/api'
+import { flattenApiError, downloadFile }       from '../../hooks/useFilePanel'
 
 const EXAMPLES = [
   { label: 'BATCH',    text: 'Generate 5 varied incoming CHF pacs.008 for stress testing' },
@@ -170,15 +171,6 @@ function CopyBtn({ text }) {
   )
 }
 
-/* ── Download helper ── */
-function downloadFile(file) {
-  const blob = new Blob([file.content], { type: 'application/xml' })
-  const url  = URL.createObjectURL(blob)
-  const a    = Object.assign(document.createElement('a'), { href: url, download: file.name })
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
 /* ── Timestamp ── */
 const Ts = ({ ts }) => (
   <span style={{ color: 'var(--text-3)', fontSize: 10, marginLeft: 6, fontVariantNumeric: 'tabular-nums' }}>
@@ -237,13 +229,7 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
         onSelectFile(data.generated_files[0])
       }
     } catch (e) {
-      const detail = e.response?.data?.detail
-      const errMsg = typeof detail === 'string'
-        ? detail
-        : Array.isArray(detail)
-          ? detail.map(d => d.msg || JSON.stringify(d)).join('\n')
-          : e.message
-      setMessages(prev => [...prev, { role: 'assistant', text: errMsg, error: true, ts: Date.now() }])
+      setMessages(prev => [...prev, { role: 'assistant', text: flattenApiError(e), error: true, ts: Date.now() }])
     }
     setLoading(false)
   }
