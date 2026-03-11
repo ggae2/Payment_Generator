@@ -409,3 +409,6 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
           </div>
         </>
       }
+    </div>
+  )
+}
