@@ -8,7 +8,7 @@ export default defineConfig({
       '/api': {
         target: 'https://api.deepcard.ch',
         changeOrigin: true,
-        secure: true,
+        secure: false, // permet les certs auto-signés (proxy d'entreprise)
       },
     },
   },
