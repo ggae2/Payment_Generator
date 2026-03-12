@@ -95,7 +95,7 @@ const SchemeTabs = ({ scheme, onChange }) => (
   </div>
 )
 
- = ({ label, value, onChange, mono, children }) => (
+const Field = ({ label, value, onChange, mono, children }) => (
   <div style={{ marginBottom:10 }}>
     <label style={{
       display:'block', color:'var(--text-3)', fontSize:10,
