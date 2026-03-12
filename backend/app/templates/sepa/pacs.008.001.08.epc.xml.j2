@@ -5,7 +5,7 @@
       <MsgId>{{ msg_id }}</MsgId>
       <CreDtTm>{{ created_at }}</CreDtTm>
       <NbOfTxs>1</NbOfTxs>
-      <TtlIntrBkSttlmAmt Ccy="EUR">{{ amount }}</TtlIntrBkSttlmAmt>
+      <TtlIntrBkSttlmAmt Ccy="EUR">{{ "%.2f"|format(amount|float) }}</TtlIntrBkSttlmAmt>
       <IntrBkSttlmDt>{{ value_date }}</IntrBkSttlmDt>
       <SttlmInf>
         <SttlmMtd>CLRG</SttlmMtd>
@@ -34,9 +34,8 @@
         <InstrId>{{ msg_id }}</InstrId>
         <EndToEndId>{{ end_to_end_id }}</EndToEndId>
         <TxId>{{ tx_id }}</TxId>
-        <UETR>{{ uetr }}</UETR>
       </PmtId>
-      <IntrBkSttlmAmt Ccy="EUR">{{ amount }}</IntrBkSttlmAmt>
+      <IntrBkSttlmAmt Ccy="EUR">{{ "%.2f"|format(amount|float) }}</IntrBkSttlmAmt>
       <ChrgBr>SLEV</ChrgBr>
       <Dbtr>
         <Nm>{{ debtor_name }}</Nm>
