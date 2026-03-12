@@ -2,19 +2,32 @@ import { useState } from 'react'
 import { generateMessage }  from '../../services/api'
 import { flattenApiError }  from '../../hooks/useFilePanel'
 
-const PRESETS = {
+const SIC_PRESETS = {
   UBS:  { debtor_name:'UBS AG',         debtor_iban:'CH9300762011623852957', debtor_bic:'UBSWCHZH80A', debtor_iid:'000762' },
   CS:   { debtor_name:'Credit Suisse',  debtor_iban:'CH5604835012345678009', debtor_bic:'CRESCHZZ80A', debtor_iid:'004835' },
   RAIF: { debtor_name:'Raiffeisen',     debtor_iban:'CH3608387000001234567', debtor_bic:'RAIFCH22XXX', debtor_iid:'080837' },
   POST: { debtor_name:'PostFinance',    debtor_iban:'CH5600000000000000001', debtor_bic:'POFICHBEXXX', debtor_iid:'009000' },
 }
+const SEPA_PRESETS = {
+  BNP:  { debtor_name:'BNP Paribas',   debtor_iban:'FR7630004000031234567890143', debtor_bic:'BNPAFRPPXXX', debtor_country:'FR' },
+  DEBA: { debtor_name:'Deutsche Bank', debtor_iban:'DE89370400440532013000',      debtor_bic:'DEUTDEBBXXX', debtor_country:'DE' },
+  ING:  { debtor_name:'ING Bank',      debtor_iban:'NL91ABNA0417164300',          debtor_bic:'INGBNL2AXXX', debtor_country:'NL' },
+  BBVA: { debtor_name:'BBVA',          debtor_iban:'ES9121000418450200051332',    debtor_bic:'BBVAESMMXXX', debtor_country:'ES' },
+}
 
-const DEFAULT = {
+const SIC_DEFAULT = {
   debtor_name:'UBS AG', debtor_iban:'CH9300762011623852957', debtor_bic:'UBSWCHZH80A', debtor_iid:'000762',
   debtor_street:'', debtor_postcode:'', debtor_city:'', debtor_country:'CH',
   creditor_name:'', creditor_iban:'', creditor_bic:'', creditor_iid:'',
   creditor_street:'', creditor_postcode:'', creditor_city:'', creditor_country:'CH',
   amount:'10000', currency:'CHF', remittance:'Test payment SIC',
+}
+const SEPA_DEFAULT = {
+  debtor_name:'BNP Paribas', debtor_iban:'FR7630004000031234567890143', debtor_bic:'BNPAFRPPXXX', debtor_iid:'',
+  debtor_street:'', debtor_postcode:'', debtor_city:'', debtor_country:'FR',
+  creditor_name:'', creditor_iban:'', creditor_bic:'', creditor_iid:'',
+  creditor_street:'', creditor_postcode:'', creditor_city:'', creditor_country:'DE',
+  amount:'5000', currency:'EUR', remittance:'Test payment SEPA SCT',
 }
 
 const COUNTRIES = [
@@ -56,7 +69,33 @@ const SectionLabel = ({ label, sub }) => (
   </div>
 )
 
-const Field = ({ label, value, onChange, mono, children }) => (
+const SchemeTabs = ({ scheme, onChange }) => (
+  <div style={{
+    display:'flex', gap:0, background:'var(--bg-2)',
+    borderRadius:6, padding:2,
+    border:'1px solid var(--border)', marginBottom:20, width:'fit-content',
+  }}>
+    {[
+      { key:'sic',  label:'SIC',  sub:'Swiss' },
+      { key:'sepa', label:'SEPA', sub:'EPC SCT' },
+    ].map(s => (
+      <button key={s.key} onClick={() => onChange(s.key)} style={{
+        padding:'5px 18px', borderRadius:4, border:'none',
+        background: scheme === s.key ? 'var(--accent-soft)' : 'transparent',
+        color: scheme === s.key ? 'var(--accent)' : 'var(--text-3)',
+        cursor:'pointer', fontFamily:"'Inter',sans-serif",
+        fontSize:12, fontWeight: scheme === s.key ? 600 : 400,
+        transition:'all 0.15s ease',
+        display:'flex', gap:5, alignItems:'center',
+      }}>
+        {s.label}
+        <span style={{ fontSize:9, opacity:0.65, fontFamily:'IBM Plex Mono,monospace' }}>{s.sub}</span>
+      </button>
+    ))}
+  </div>
+)
+
+ = ({ label, value, onChange, mono, children }) => (
   <div style={{ marginBottom:10 }}>
     <label style={{
       display:'block', color:'var(--text-3)', fontSize:10,
@@ -81,30 +120,47 @@ const Field = ({ label, value, onChange, mono, children }) => (
 )
 
 export default function FormPanel({ onFilesGenerated, onSelectFile }) {
-  const [form, setForm]        = useState(DEFAULT)
-  const [loading, setLoading]  = useState(false)
-  const [error, setError]      = useState(null)
-  const [success, setSuccess]  = useState(false)
+  const [scheme, setScheme]        = useState('sic')
+  const [form, setForm]            = useState(SIC_DEFAULT)
+  const [loading, setLoading]      = useState(false)
+  const [error, setError]          = useState(null)
+  const [success, setSuccess]      = useState(false)
   const [lastPacs008, setLastPacs008] = useState(null)
 
   const set = k => e => setForm(p => ({...p, [k]: e.target.value}))
+
+  const handleSchemeChange = (s) => {
+    setScheme(s)
+    setForm(s === 'sic' ? SIC_DEFAULT : SEPA_DEFAULT)
+    setError(null)
+    setLastPacs008(null)
+  }
+
+  const PRESETS = scheme === 'sic' ? SIC_PRESETS : SEPA_PRESETS
   const applyPreset = (key) => setForm(p => ({...p, ...PRESETS[key]}))
 
   const IBAN_RE = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/
   const IID_RE  = /^[0-9]{6}$/
+  const BIC_RE  = /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/
 
   const validateForm = () => {
     const errs = []
     if (!form.creditor_name.trim())  errs.push('Creditor Name is required')
     const cIban = form.creditor_iban.replace(/\s/g, '').toUpperCase()
     if (!cIban)                      errs.push('Creditor IBAN is required')
-    else if (!IBAN_RE.test(cIban))   errs.push('Creditor IBAN format is invalid (expected e.g. CH93...)')
-    if (!form.creditor_iid.trim())   errs.push('Creditor IID is required')
-    else if (!IID_RE.test(form.creditor_iid)) errs.push('Creditor IID must be exactly 6 digits')
-    if (!form.debtor_iid.trim())     errs.push('Debtor IID is required')
-    else if (!IID_RE.test(form.debtor_iid))   errs.push('Debtor IID must be exactly 6 digits')
+    else if (!IBAN_RE.test(cIban))   errs.push('Creditor IBAN format is invalid (expected e.g. DE89...)')
+    const cBic = form.creditor_bic.replace(/\s/g, '').toUpperCase()
+    if (!cBic)                       errs.push('Creditor BIC is required')
+    else if (!BIC_RE.test(cBic))     errs.push('Creditor BIC format is invalid (e.g. DEUTDEBBXXX)')
+    if (scheme === 'sic') {
+      if (!form.creditor_iid.trim())                    errs.push('Creditor IID is required')
+      else if (!IID_RE.test(form.creditor_iid))         errs.push('Creditor IID must be exactly 6 digits')
+      if (!form.debtor_iid.trim())                      errs.push('Debtor IID is required')
+      else if (!IID_RE.test(form.debtor_iid))           errs.push('Debtor IID must be exactly 6 digits')
+    }
     const amt = parseFloat(form.amount)
     if (!form.amount || isNaN(amt) || amt <= 0) errs.push('Amount must be a positive number')
+    if (scheme === 'sepa' && amt > 999999999.99) errs.push('SEPA SCT max amount is 999,999,999.99 EUR')
     return errs
   }
 
@@ -113,30 +169,32 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
     if (errs.length) { setError(errs.join('\n')); return }
     setLoading(true); setError(null); setSuccess(false)
     try {
-      const resp = await generateMessage('sic', 'pacs.008', {...form, amount: parseFloat(form.amount)})
+      const params = {...form, amount: parseFloat(form.amount)}
+      if (scheme === 'sepa') params.currency = 'EUR'
+      const resp = await generateMessage(scheme, 'pacs.008', params)
       const text = await resp.data.text()
       const ts   = new Date().toISOString().slice(0,10)
-      const filename = `pacs008_${form.debtor_iid}_to_${form.creditor_iid}_${ts}.xml`
+      const suffix = scheme === 'sepa'
+        ? `${form.debtor_bic.slice(0,8)}_to_${form.creditor_bic.slice(0,8)}`
+        : `${form.debtor_iid}_to_${form.creditor_iid}`
+      const filename = `pacs008_${scheme}_${suffix}_${ts}.xml`
       const file = { name: filename, content: text }
       onFilesGenerated([file])
       onSelectFile(file)
-      // Parse generated XML to extract fields needed for recall
-      const parser = new DOMParser()
-      const xmlDoc = parser.parseFromString(text, 'text/xml')
-      const msgId   = xmlDoc.querySelector('MsgId')?.textContent  ?? ''
-      const txId    = xmlDoc.querySelector('TxId')?.textContent   ?? ''
-      const uetr    = xmlDoc.querySelector('UETR')?.textContent   ?? ''
-      const sttlmDt = xmlDoc.querySelector('IntrBkSttlmDt')?.textContent ?? new Date().toISOString().slice(0, 10)
-      setLastPacs008({
-        orig_msg_id:     msgId,
-        orig_tx_id:      txId,
-        orig_uetr:       uetr,
-        orig_amount:     parseFloat(form.amount),
-        orig_currency:   form.currency,
-        orig_value_date: sttlmDt,
-        assgnr_iid:      form.debtor_iid,
-        assgne_iid:      form.creditor_iid,
-      })
+      if (scheme === 'sic') {
+        const parser = new DOMParser()
+        const xmlDoc = parser.parseFromString(text, 'text/xml')
+        const msgId   = xmlDoc.querySelector('MsgId')?.textContent  ?? ''
+        const txId    = xmlDoc.querySelector('TxId')?.textContent   ?? ''
+        const uetr    = xmlDoc.querySelector('UETR')?.textContent   ?? ''
+        const sttlmDt = xmlDoc.querySelector('IntrBkSttlmDt')?.textContent ?? new Date().toISOString().slice(0, 10)
+        setLastPacs008({
+          orig_msg_id: msgId, orig_tx_id: txId, orig_uetr: uetr,
+          orig_amount: parseFloat(form.amount), orig_currency: form.currency,
+          orig_value_date: sttlmDt,
+          assgnr_iid: form.debtor_iid, assgne_iid: form.creditor_iid,
+        })
+      }
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch(e) {
@@ -165,6 +223,9 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
 
   return (
     <div style={{ height:'100%', overflowY:'auto', padding:'20px 24px' }}>
+      {/* Scheme selector */}
+      <SchemeTabs scheme={scheme} onChange={handleSchemeChange} />
+
       {/* Message type */}
       <div style={{
         display:'flex', alignItems:'center', gap:8, marginBottom:20,
@@ -174,8 +235,14 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
           pacs.008.001.08
         </span>
         <span style={{ color:'var(--text-3)', fontSize:11 }}>
-          FI-to-FI Customer Credit Transfer
+          {scheme === 'sic' ? 'FI-to-FI Customer Credit Transfer · SIC' : 'FI-to-FI Customer Credit Transfer · SEPA SCT'}
         </span>
+        {scheme === 'sepa' && (
+          <span className="mono" style={{
+            fontSize:9, color:'var(--success)', border:'1px solid var(--success)',
+            padding:'2px 6px', borderRadius:3,
+          }}>EUR ONLY</span>
+        )}
       </div>
 
       {/* Debtor */}
@@ -213,10 +280,10 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
               <CountrySelect value={form.debtor_country} onChange={set('debtor_country')} />
             </Field>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
+          <div style={{ display:'grid', gridTemplateColumns: scheme === 'sic' ? '1fr 1fr 1fr' : '1fr 1fr', gap:10 }}>
             <Field label="IBAN" value={form.debtor_iban} onChange={set('debtor_iban')} mono />
             <Field label="BIC"  value={form.debtor_bic}  onChange={set('debtor_bic')}  mono />
-            <Field label="IID (SIC)" value={form.debtor_iid} onChange={set('debtor_iid')} mono />
+            {scheme === 'sic' && <Field label="IID (SIC)" value={form.debtor_iid} onChange={set('debtor_iid')} mono />}
           </div>
         </div>
       </div>
@@ -239,10 +306,10 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
               <CountrySelect value={form.creditor_country} onChange={set('creditor_country')} />
             </Field>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
+          <div style={{ display:'grid', gridTemplateColumns: scheme === 'sic' ? '1fr 1fr 1fr' : '1fr 1fr', gap:10 }}>
             <Field label="IBAN" value={form.creditor_iban} onChange={set('creditor_iban')} mono />
             <Field label="BIC"  value={form.creditor_bic}  onChange={set('creditor_bic')}  mono />
-            <Field label="IID (SIC)" value={form.creditor_iid} onChange={set('creditor_iid')} mono />
+            {scheme === 'sic' && <Field label="IID (SIC)" value={form.creditor_iid} onChange={set('creditor_iid')} mono />}
           </div>
         </div>
       </div>
@@ -257,15 +324,24 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
           <div style={{ display:'grid', gridTemplateColumns:'1fr 80px', gap:10 }}>
             <Field label="AMOUNT" value={form.amount} onChange={set('amount')} mono />
             <Field label="CCY">
-              <select value={form.currency} onChange={set('currency')} style={{
-                width:'100%', background:'rgba(255,255,255,0.02)',
-                border:'1px solid var(--border)', borderRadius:6,
-                padding:'9px 12px', color:'var(--accent)',
-                fontFamily:'IBM Plex Mono,monospace', fontSize:12, outline:'none',
-                cursor:'pointer',
-              }}>
-                <option>CHF</option><option>EUR</option>
-              </select>
+              {scheme === 'sic' ? (
+                <select value={form.currency} onChange={set('currency')} style={{
+                  width:'100%', background:'rgba(255,255,255,0.02)',
+                  border:'1px solid var(--border)', borderRadius:6,
+                  padding:'9px 12px', color:'var(--accent)',
+                  fontFamily:'IBM Plex Mono,monospace', fontSize:12, outline:'none',
+                  cursor:'pointer',
+                }}>
+                  <option>CHF</option><option>EUR</option>
+                </select>
+              ) : (
+                <div style={{
+                  background:'var(--bg-2)', border:'1px solid var(--border)',
+                  borderRadius:6, padding:'9px 12px',
+                  fontFamily:'IBM Plex Mono,monospace', fontSize:12,
+                  color:'var(--accent)', userSelect:'none',
+                }}>EUR</div>
+              )}
             </Field>
           </div>
           <Field label="REMITTANCE INFO" value={form.remittance} onChange={set('remittance')} />
@@ -284,7 +360,7 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
       )}
 
       <div style={{ display:'flex', gap:8, flexDirection:'column' }}>
-      {lastPacs008 && (
+      {lastPacs008 && scheme === 'sic' && (
         <button
           onClick={cancelLast}
           disabled={loading}
@@ -321,7 +397,7 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
           fontSize:13, fontWeight:600,
           transition:'all 0.15s ease',
         }}>
-          {success ? '✓ Generated' : loading ? 'Generating...' : 'Generate Message'}
+          {success ? '✓ Generated' : loading ? 'Generating...' : `Generate ${scheme.toUpperCase()} Message`}
         </button>
       </div>
     </div>

@@ -3,10 +3,12 @@ import { agentChat }                           from '../../services/api'
 import { flattenApiError, downloadFile }       from '../../hooks/useFilePanel'
 
 const EXAMPLES = [
-  { label: 'BATCH',    text: 'Generate 5 varied incoming CHF pacs.008 for stress testing' },
-  { label: 'DUPL',     text: 'Generate 3 payments including a duplicate to test detection' },
-  { label: 'REJECT',   text: 'Generate a pacs.008 with invalid IBAN to test rejection handling' },
-  { label: 'HIGH-VAL', text: 'Generate high-value CHF payments above 1M for threshold testing' },
+  { label: 'BATCH',    text: 'Generate 5 varied incoming CHF pacs.008 for stress testing', scheme: 'sic' },
+  { label: 'DUPL',     text: 'Generate 3 payments including a duplicate to test detection', scheme: 'sic' },
+  { label: 'REJECT',   text: 'Generate a pacs.008 with invalid IBAN to test rejection handling', scheme: 'sic' },
+  { label: 'HIGH-VAL', text: 'Generate high-value CHF payments above 1M for threshold testing', scheme: 'sic' },
+  { label: 'SEPA-SCT', text: 'Generate a SEPA SCT incoming pacs.008 for integration testing', scheme: 'sepa' },
+  { label: 'SEPA-EUR', text: 'Generate 3 SEPA EUR transfers from different European banks', scheme: 'sepa' },
 ]
 
 const LOADING_STEPS = [
@@ -187,7 +189,7 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
   const [ctxOpen, setCtxOpen]     = useState(true)
   const [consented, setConsented] = useState(false)
   const [showConsent, setShowConsent] = useState(false)
-  const [clientCtx, setCtx]       = useState({ creditor_name:'', creditor_iban:'', creditor_iid:'', creditor_bic:'' })
+  const [clientCtx, setCtx]       = useState({ scheme:'sic', creditor_name:'', creditor_iban:'', creditor_iid:'', creditor_bic:'' })
   const endRef    = useRef(null)
   const stepTimer = useRef(null)
   const pendingRef = useRef(null)
@@ -235,9 +237,10 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
   }
 
   /* Gate: show consent on first attempt, then send */
-  const send = (text) => {
+  const send = (text, overrideScheme) => {
     const msg = text || input.trim()
     if (!msg || loading) return
+    if (overrideScheme) setCtx(p => ({ ...p, scheme: overrideScheme }))
     if (!consented) {
       pendingRef.current = msg
       setShowConsent(true)
@@ -271,6 +274,19 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
             </span>
             <span style={{ color: 'var(--text-1)', fontSize: 12, fontWeight: 600 }}>Creditor pre-fill</span>
             <span style={{ color: 'var(--text-3)', fontSize: 11 }}>optional — agent will ask if empty</span>
+            {/* Scheme toggle */}
+            <div style={{ display:'flex', gap:0, background:'var(--bg-2)', borderRadius:4, padding:2, border:'1px solid var(--border)', marginLeft:8 }} onClick={e => e.stopPropagation()}>
+              {['sic','sepa'].map(s => (
+                <button key={s} onClick={() => setCtx(p => ({ ...p, scheme: s }))} style={{
+                  padding:'2px 10px', borderRadius:3, border:'none',
+                  background: clientCtx.scheme === s ? 'var(--accent-soft)' : 'transparent',
+                  color: clientCtx.scheme === s ? 'var(--accent)' : 'var(--text-3)',
+                  cursor:'pointer', fontFamily:'IBM Plex Mono,monospace',
+                  fontSize:10, fontWeight: clientCtx.scheme === s ? 600 : 400,
+                  transition:'all 0.15s',
+                }}>{s.toUpperCase()}</button>
+              ))}
+            </div>
           </div>
           {messages.length > 0 && (
             <button onClick={e => { e.stopPropagation(); clearSession() }} style={{
@@ -286,10 +302,15 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
         </div>
 
         {ctxOpen && (
-          <div style={{ padding: '0 20px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
-            {[['creditor_name','Name'],['creditor_iban','IBAN'],['creditor_iid','IID (6 digits)'],['creditor_bic','BIC']].map(([k, label]) => (
+          <div style={{ padding: '0 20px 12px', display: 'grid', gridTemplateColumns: clientCtx.scheme === 'sic' ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr', gap: 6 }}>
+            {[
+              ['creditor_name','Name'],
+              ['creditor_iban','IBAN'],
+              ...(clientCtx.scheme === 'sic' ? [['creditor_iid','IID (6 digits)']] : []),
+              ['creditor_bic','BIC'],
+            ].map(([k, label]) => (
               <input key={k} placeholder={label}
-                value={clientCtx[k]}
+                value={clientCtx[k] || ''}
                 onChange={e => setCtx(p => ({ ...p, [k]: e.target.value }))}
                 style={{
                   background: 'var(--bg-2)', border: '1px solid var(--border)',
@@ -378,15 +399,17 @@ export default function AgentChat({ onFilesGenerated, onSelectFile }) {
             {/* Quick scenario chips — always visible */}
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
               {EXAMPLES.map((ex, i) => (
-                <button key={i} onClick={() => send(ex.text)} disabled={loading} style={{
+                <button key={i} onClick={() => send(ex.text, ex.scheme)} disabled={loading} style={{
                   padding: '3px 10px', borderRadius: 20,
-                  background: 'transparent', border: '1px solid var(--border)',
-                  color: 'var(--text-3)', cursor: loading ? 'default' : 'pointer',
+                  background: ex.scheme === 'sepa' ? 'var(--success-soft)' : 'transparent',
+                  border: `1px solid ${ex.scheme === 'sepa' ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`,
+                  color: ex.scheme === 'sepa' ? 'var(--success)' : 'var(--text-3)',
+                  cursor: loading ? 'default' : 'pointer',
                   fontFamily: 'IBM Plex Mono,monospace', fontSize: 10, fontWeight: 600,
                   transition: 'all 0.15s',
                 }}
-                onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)' }}}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-3)' }}
+                onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = ex.scheme === 'sepa' ? 'var(--success)' : 'var(--accent)'; e.currentTarget.style.color = ex.scheme === 'sepa' ? 'var(--success)' : 'var(--accent)' }}}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = ex.scheme === 'sepa' ? 'rgba(34,197,94,0.3)' : 'var(--border)'; e.currentTarget.style.color = ex.scheme === 'sepa' ? 'var(--success)' : 'var(--text-3)' }}
                 >{ex.label}</button>
               ))}
             </div>

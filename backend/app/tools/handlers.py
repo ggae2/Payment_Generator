@@ -124,6 +124,20 @@ def handle_tool_call(name: str, inputs: dict) -> dict:
             "filename":     f"camt056_{params['assgnr_iid']}_to_{params['assgne_iid']}_{ts}.xml",
         }
 
+    elif name == "generate_pacs008_sepa":
+        from datetime import datetime as _dt
+        ts  = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
+        params = dict(inputs)
+        params["currency"] = "EUR"  # SEPA is always EUR
+        xml = build_message("sepa", "pacs.008", params)
+        debtor_bic   = inputs.get("debtor_bic",   "UNKNOWN")[:8]
+        creditor_bic = inputs.get("creditor_bic", "UNKNOWN")[:8]
+        return {
+            "xml":          xml.decode(),
+            "message_type": "pacs.008.sepa",
+            "filename":     f"pacs008_sepa_{debtor_bic}_to_{creditor_bic}_{ts}.xml",
+        }
+
     elif name == "validate_iban":
         iban    = inputs["iban"].replace(" ", "").upper()
         valid   = _iban_mod97(iban)

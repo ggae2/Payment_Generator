@@ -47,7 +47,33 @@ REGISTRY = {
         # Ajouter pacs.009, camt.054, etc. ici
     },
     "sepa": {
-        # Ajouter messages SEPA ici
+        "pacs.008": {
+            "label":    "SEPA Credit Transfer (EPC SCT Inter-PSP)",
+            "template": "sepa/pacs.008.001.08.epc.xml.j2",
+            "xsd":      "Sepa/EPC115-06_2023_V1.0_pacs.008.001.08_Update.xsd",
+            "fields": [
+                {"name": "msg_id",           "label": "Message ID",          "type": "string",  "required": False, "default": "auto"},
+                {"name": "debtor_name",      "label": "Debtor Name",         "type": "string",  "required": True},
+                {"name": "debtor_iban",      "label": "Debtor IBAN",         "type": "iban",    "required": True},
+                {"name": "debtor_bic",       "label": "Debtor BIC",          "type": "string",  "required": True,  "pattern": "[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?"},
+                {"name": "debtor_street",    "label": "Debtor Street",       "type": "string",  "required": False},
+                {"name": "debtor_postcode",  "label": "Debtor Postcode",     "type": "string",  "required": False},
+                {"name": "debtor_city",      "label": "Debtor City",         "type": "string",  "required": False},
+                {"name": "debtor_country",   "label": "Debtor Country",      "type": "string",  "required": False},
+                {"name": "creditor_name",    "label": "Creditor Name",       "type": "string",  "required": True},
+                {"name": "creditor_iban",    "label": "Creditor IBAN",       "type": "iban",    "required": True},
+                {"name": "creditor_bic",     "label": "Creditor BIC",        "type": "string",  "required": True,  "pattern": "[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?"},
+                {"name": "creditor_street",  "label": "Creditor Street",     "type": "string",  "required": False},
+                {"name": "creditor_postcode","label": "Creditor Postcode",   "type": "string",  "required": False},
+                {"name": "creditor_city",    "label": "Creditor City",       "type": "string",  "required": False},
+                {"name": "creditor_country", "label": "Creditor Country",    "type": "string",  "required": False},
+                {"name": "amount",           "label": "Amount (EUR)",        "type": "decimal", "required": True},
+                {"name": "currency",         "label": "Currency",           "type": "enum",    "required": False, "options": ["EUR"], "default": "EUR"},
+                {"name": "value_date",       "label": "Settlement Date",     "type": "date",    "required": False, "default": "today"},
+                {"name": "end_to_end_id",    "label": "End-to-End ID",       "type": "string",  "required": False, "default": "NOTPROVIDED"},
+                {"name": "remittance",       "label": "Remittance Info",     "type": "string",  "required": False},
+            ]
+        }
     },
     "swift": {
         # Ajouter messages SWIFT ici

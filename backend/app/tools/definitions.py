@@ -69,6 +69,33 @@ TOOLS = [
         }
     },
     {
+        "name": "generate_pacs008_sepa",
+        "description": "Generate a pacs.008 SEPA SCT Inter-PSP incoming test file (EPC scheme, EUR only, BIC-routed)",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "debtor_name":      {"type": "string", "description": "Debtor (originator PSP) name"},
+                "debtor_iban":      {"type": "string", "description": "Debtor IBAN e.g. FR7630006000011234567890189"},
+                "debtor_bic":       {"type": "string", "description": "Debtor BIC/SWIFT code e.g. BNPAFRPPXXX"},
+                "debtor_street":    {"type": "string"},
+                "debtor_postcode":  {"type": "string"},
+                "debtor_city":      {"type": "string"},
+                "debtor_country":   {"type": "string", "description": "ISO 2-letter country code e.g. FR"},
+                "creditor_name":    {"type": "string", "description": "Creditor (beneficiary PSP) name"},
+                "creditor_iban":    {"type": "string", "description": "Creditor IBAN e.g. DE89370400440532013000"},
+                "creditor_bic":     {"type": "string", "description": "Creditor BIC/SWIFT code e.g. DEUTDEBBXXX"},
+                "creditor_street":  {"type": "string"},
+                "creditor_postcode":{"type": "string"},
+                "creditor_city":    {"type": "string"},
+                "creditor_country": {"type": "string", "description": "ISO 2-letter country code e.g. DE"},
+                "amount":           {"type": "number", "description": "Amount in EUR (0.01 – 999999999.99)"},
+                "value_date":       {"type": "string", "description": "Settlement date YYYY-MM-DD"},
+                "remittance":       {"type": "string", "description": "Unstructured remittance info (max 140 chars)"}
+            },
+            "required": ["debtor_name", "debtor_iban", "debtor_bic", "creditor_name", "creditor_iban", "creditor_bic", "amount"]
+        }
+    },
+    {
         "name": "validate_iban",
         "description": "Validate an IBAN",
         "input_schema": {

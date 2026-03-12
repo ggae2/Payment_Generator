@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <FIToFICstmrCdtTrf>
+    <GrpHdr>
+      <MsgId>{{ msg_id }}</MsgId>
+      <CreDtTm>{{ created_at }}</CreDtTm>
+      <NbOfTxs>1</NbOfTxs>
+      <TtlIntrBkSttlmAmt Ccy="EUR">{{ amount }}</TtlIntrBkSttlmAmt>
+      <IntrBkSttlmDt>{{ value_date }}</IntrBkSttlmDt>
+      <SttlmInf>
+        <SttlmMtd>CLRG</SttlmMtd>
+      </SttlmInf>
+      <PmtTpInf>
+        <SvcLvl>
+          <Cd>SEPA</Cd>
+        </SvcLvl>
+        <LclInstrm>
+          <Cd>CORE</Cd>
+        </LclInstrm>
+      </PmtTpInf>
+      <InstgAgt>
+        <FinInstnId>
+          <BICFI>{{ debtor_bic }}</BICFI>
+        </FinInstnId>
+      </InstgAgt>
+      <InstdAgt>
+        <FinInstnId>
+          <BICFI>{{ creditor_bic }}</BICFI>
+        </FinInstnId>
+      </InstdAgt>
+    </GrpHdr>
+    <CdtTrfTxInf>
+      <PmtId>
+        <InstrId>{{ msg_id }}</InstrId>
+        <EndToEndId>{{ end_to_end_id }}</EndToEndId>
+        <TxId>{{ tx_id }}</TxId>
+        <UETR>{{ uetr }}</UETR>
+      </PmtId>
+      <IntrBkSttlmAmt Ccy="EUR">{{ amount }}</IntrBkSttlmAmt>
+      <ChrgBr>SLEV</ChrgBr>
+      <Dbtr>
+        <Nm>{{ debtor_name }}</Nm>
+        {% if debtor_street or debtor_postcode or debtor_city or debtor_country %}
+        <PstlAdr>
+          {% if debtor_street %}
+          <StrtNm>{{ debtor_street }}</StrtNm>
+          {% endif %}
+          {% if debtor_postcode %}
+          <PstCd>{{ debtor_postcode }}</PstCd>
+          {% endif %}
+          {% if debtor_city %}
+          <TwnNm>{{ debtor_city }}</TwnNm>
+          {% endif %}
+          {% if debtor_country %}
+          <Ctry>{{ debtor_country }}</Ctry>
+          {% endif %}
+        </PstlAdr>
+        {% endif %}
+      </Dbtr>
+      <DbtrAcct>
+        <Id>
+          <IBAN>{{ debtor_iban }}</IBAN>
+        </Id>
+      </DbtrAcct>
+      <DbtrAgt>
+        <FinInstnId>
+          <BICFI>{{ debtor_bic }}</BICFI>
+        </FinInstnId>
+      </DbtrAgt>
+      <CdtrAgt>
+        <FinInstnId>
+          <BICFI>{{ creditor_bic }}</BICFI>
+        </FinInstnId>
+      </CdtrAgt>
+      <Cdtr>
+        <Nm>{{ creditor_name }}</Nm>
+        {% if creditor_street or creditor_postcode or creditor_city or creditor_country %}
+        <PstlAdr>
+          {% if creditor_street %}
+          <StrtNm>{{ creditor_street }}</StrtNm>
+          {% endif %}
+          {% if creditor_postcode %}
+          <PstCd>{{ creditor_postcode }}</PstCd>
+          {% endif %}
+          {% if creditor_city %}
+          <TwnNm>{{ creditor_city }}</TwnNm>
+          {% endif %}
+          {% if creditor_country %}
+          <Ctry>{{ creditor_country }}</Ctry>
+          {% endif %}
+        </PstlAdr>
+        {% endif %}
+      </Cdtr>
+      <CdtrAcct>
+        <Id>
+          <IBAN>{{ creditor_iban }}</IBAN>
+        </Id>
+      </CdtrAcct>
+      {% if remittance %}
+      <RmtInf>
+        <Ustrd>{{ remittance }}</Ustrd>
+      </RmtInf>
+      {% endif %}
+    </CdtTrfTxInf>
+  </FIToFICstmrCdtTrf>
+</Document>

@@ -5,7 +5,9 @@ XSD_DIR = Path(__file__).parent.parent / "schemas_xsd"
 
 # Legacy mapping (kept for backward compat)
 SCHEMA_MAP = {
-    "pacs008": "sic/pacs.008.001.08.ch.02.xsd",
+    "pacs008":      "SIC/pacs.008.001.08.ch.02.xsd",
+    "pacs008sepa":  "Sepa/EPC115-06_2023_V1.0_pacs.008.001.08_Update.xsd",
+    "pacs008_sepa": "Sepa/EPC115-06_2023_V1.0_pacs.008.001.08_Update.xsd",
 }
 
 def validate_xml_against_xsd(xml_content: bytes, message_type: str) -> dict:

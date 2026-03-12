@@ -13,3 +13,5 @@ export const validateXml = (messageType, file) => {
   fd.append('file', file)
   return API.post(`/validate/${messageType}`, fd)
 }
+
+export const fetchSchemes = () => API.get('/generate/schemes')
