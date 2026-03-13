@@ -9,6 +9,15 @@ from app.services.validator import validate_xml_against_xsd_path
 
 logger = logging.getLogger(__name__)
 
+# MsgDefIdr mapping for BAH head.001.001.02
+_MSG_DEF_IDR = {
+    "pacs.008": "pacs.008.001.08",
+    "pacs.009": "pacs.009.001.08",
+    "camt.056": "camt.056.001.08",
+    "camt.029": "camt.029.001.09",
+    "camt.054": "camt.054.001.08",
+}
+
 jinja_env = Environment(
     loader=FileSystemLoader(str(TEMPLATES_DIR)),
     autoescape=False,
@@ -36,7 +45,8 @@ def _validate_params(entry: dict, params: dict) -> list[str]:
         errors.append("'amount' must be a positive number")
     return errors
 
-def build_message(scheme: str, msg_type: str, params: dict, validate: bool = True) -> bytes:
+
+def build_message(scheme: str, msg_type: str, params: dict, validate: bool = True, envelope: bool = False) -> bytes:
     entry = get_entry(scheme, msg_type)
 
     # Validate params against registry field definitions
@@ -58,22 +68,20 @@ def build_message(scheme: str, msg_type: str, params: dict, validate: bool = Tru
         params["created_at"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
     if not params.get("tx_id"):
         params["tx_id"] = f"{datetime.utcnow().strftime('%Y%m%d')}-1-{uuid.uuid4().hex[:4].upper()}"
-
     if not params.get("cxl_id"):
-        raw = f"CXL-{uuid.uuid4().hex[:12].upper()}"
-        params["cxl_id"] = raw[:35]
+        params["cxl_id"] = f"CXL-{uuid.uuid4().hex[:12].upper()}"[:35]
     if not params.get("assgnmt_id"):
-        raw = f"ASSGNMT-{uuid.uuid4().hex[:8].upper()}"
-        params["assgnmt_id"] = raw[:35]
+        params["assgnmt_id"] = f"ASSGNMT-{uuid.uuid4().hex[:8].upper()}"[:35]
     if not params.get("orig_msg_nm_id"):
         params["orig_msg_nm_id"] = "pacs.008.001.08"
     if not params.get("cxl_reason_code"):
         params["cxl_reason_code"] = "CUST"
 
     try:
-        template  = jinja_env.get_template(entry["template"])
+        template = jinja_env.get_template(entry["template"])
     except TemplateNotFound:
         raise ValueError(f"Template not found: {entry['template']} — check TEMPLATES_DIR configuration")
+
     xml_str   = template.render(**params)
     xml_bytes = xml_str.encode("UTF-8")
 
@@ -83,4 +91,36 @@ def build_message(scheme: str, msg_type: str, params: dict, validate: bool = Tru
         if not result["valid"]:
             raise ValueError(f"XSD validation failed: {result['error']}")
 
+    if envelope:
+        xml_bytes = wrap_bah(xml_bytes, params, msg_type)
+
     return xml_bytes
+
+
+def wrap_bah(xml_bytes: bytes, params: dict, msg_type: str) -> bytes:
+    """Wrap a validated ISO 20022 Document in a head.001.001.02 BAH envelope."""
+    inner = xml_bytes.decode("UTF-8")
+    # Strip the inner XML declaration — the envelope supplies its own
+    if inner.startswith("<?xml"):
+        inner = inner[inner.index("?>") + 2:].lstrip()
+
+    sender_bic   = params.get("debtor_bic",   params.get("sender_bic",   "XXXXXX00XXX"))
+    receiver_bic = params.get("creditor_bic", params.get("receiver_bic", "XXXXXX00XXX"))
+    msg_def_idr  = _MSG_DEF_IDR.get(msg_type, msg_type)
+    biz_msg_idr  = params.get("msg_id", f"BAH-{uuid.uuid4().hex[:8].upper()}")[:35]
+    created_at   = params.get("created_at", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+
+    try:
+        bah_tpl = jinja_env.get_template("shared/head.001.001.02.xml.j2")
+    except TemplateNotFound:
+        raise ValueError("BAH envelope template not found: templates/shared/head.001.001.02.xml.j2")
+
+    enveloped = bah_tpl.render(
+        sender_bic=sender_bic,
+        receiver_bic=receiver_bic,
+        biz_msg_idr=biz_msg_idr,
+        msg_def_idr=msg_def_idr,
+        created_at=created_at,
+        document_xml=inner,
+    )
+    return enveloped.encode("UTF-8")

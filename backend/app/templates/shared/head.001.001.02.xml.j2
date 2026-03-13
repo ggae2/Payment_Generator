@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BizMsgEnvlp>
+  <AppHdr xmlns="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
+    <Fr>
+      <FIId>
+        <FinInstnId>
+          <BICFI>{{ sender_bic }}</BICFI>
+        </FinInstnId>
+      </FIId>
+    </Fr>
+    <To>
+      <FIId>
+        <FinInstnId>
+          <BICFI>{{ receiver_bic }}</BICFI>
+        </FinInstnId>
+      </FIId>
+    </To>
+    <BizMsgIdr>{{ biz_msg_idr }}</BizMsgIdr>
+    <MsgDefIdr>{{ msg_def_idr }}</MsgDefIdr>
+    <CreDtTm>{{ created_at }}</CreDtTm>
+  </AppHdr>
+{{ document_xml }}
+</BizMsgEnvlp>

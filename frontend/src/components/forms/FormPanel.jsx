@@ -20,7 +20,7 @@ const SIC_DEFAULT = {
   debtor_street:'', debtor_postcode:'', debtor_city:'', debtor_country:'CH',
   creditor_name:'', creditor_iban:'', creditor_bic:'', creditor_iid:'',
   creditor_street:'', creditor_postcode:'', creditor_city:'', creditor_country:'CH',
-  amount:'10000', currency:'CHF', remittance:'Test payment SIC',
+  amount:'10000', currency:'CHF', charge_bearer:'SHAR', remittance:'Test payment SIC',
 }
 const SEPA_DEFAULT = {
   debtor_name:'BNP Paribas', debtor_iban:'FR7630004000031234567890143', debtor_bic:'BNPAFRPPXXX', debtor_iid:'',
@@ -122,6 +122,7 @@ const Field = ({ label, value, onChange, mono, children }) => (
 export default function FormPanel({ onFilesGenerated, onSelectFile }) {
   const [scheme, setScheme]        = useState('sic')
   const [form, setForm]            = useState(SIC_DEFAULT)
+  const [envelope, setEnvelope]    = useState(false)
   const [loading, setLoading]      = useState(false)
   const [error, setError]          = useState(null)
   const [success, setSuccess]      = useState(false)
@@ -134,6 +135,7 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
     setForm(s === 'sic' ? SIC_DEFAULT : SEPA_DEFAULT)
     setError(null)
     setLastPacs008(null)
+    setEnvelope(false)
   }
 
   const PRESETS = scheme === 'sic' ? SIC_PRESETS : SEPA_PRESETS
@@ -171,7 +173,7 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
     try {
       const params = {...form, amount: parseFloat(form.amount)}
       if (scheme === 'sepa') params.currency = 'EUR'
-      const resp = await generateMessage(scheme, 'pacs.008', params)
+      const resp = await generateMessage(scheme, 'pacs.008', params, envelope)
       const text = await resp.data.text()
       const ts   = new Date().toISOString().slice(0,10)
       const suffix = scheme === 'sepa'
@@ -243,6 +245,34 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
             padding:'2px 6px', borderRadius:3,
           }}>EUR ONLY</span>
         )}
+        <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ color:'var(--text-3)', fontSize:10, fontFamily:'IBM Plex Mono,monospace' }}>ENVELOPE</span>
+          <button
+            onClick={() => setEnvelope(v => !v)}
+            title={envelope ? 'BAH head.001.001.02 envelope enabled — click to remove' : 'Payload only — click to add BAH envelope'}
+            style={{
+              width:36, height:20, borderRadius:10, border:'none', cursor:'pointer',
+              background: envelope ? 'var(--accent)' : 'var(--bg-2)',
+              position:'relative', transition:'background 0.2s ease',
+              outline:'1px solid var(--border)',
+            }}
+          >
+            <span style={{
+              position:'absolute', top:2,
+              left: envelope ? 18 : 2,
+              width:16, height:16, borderRadius:'50%',
+              background: envelope ? '#fff' : 'var(--text-3)',
+              transition:'left 0.2s ease',
+              display:'block',
+            }} />
+          </button>
+          {envelope && (
+            <span className="mono" style={{
+              fontSize:9, color:'var(--accent)', border:'1px solid var(--accent)',
+              padding:'2px 5px', borderRadius:3,
+            }}>head.001</span>
+          )}
+        </div>
       </div>
 
       {/* Debtor */}
@@ -344,6 +374,31 @@ export default function FormPanel({ onFilesGenerated, onSelectFile }) {
               )}
             </Field>
           </div>
+          {scheme === 'sic' ? (
+            <Field label="CHARGE BEARER">
+              <select value={form.charge_bearer} onChange={set('charge_bearer')} style={{
+                width:'100%', background:'rgba(255,255,255,0.02)',
+                border:'1px solid var(--border)', borderRadius:6,
+                padding:'9px 12px', color:'var(--accent)',
+                fontFamily:'IBM Plex Mono,monospace', fontSize:12, outline:'none',
+                cursor:'pointer',
+              }}>
+                <option value="SHAR">SHAR — SHA (shared)</option>
+                <option value="DEBT">DEBT — OUR (debtor bears all)</option>
+                <option value="CRED">CRED — BEN (creditor bears all)</option>
+                <option value="SLEV">SLEV — per service level</option>
+              </select>
+            </Field>
+          ) : (
+            <Field label="CHARGE BEARER">
+              <div style={{
+                background:'var(--bg-2)', border:'1px solid var(--border)',
+                borderRadius:6, padding:'9px 12px',
+                fontFamily:'IBM Plex Mono,monospace', fontSize:12,
+                color:'var(--text-3)', userSelect:'none',
+              }}>SLEV — EPC mandatory</div>
+            </Field>
+          )}
           <Field label="REMITTANCE INFO" value={form.remittance} onChange={set('remittance')} />
         </div>
       </div>

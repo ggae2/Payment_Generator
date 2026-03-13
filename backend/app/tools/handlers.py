@@ -33,8 +33,9 @@ def _iban_mod97(iban: str) -> bool:
 def handle_tool_call(name: str, inputs: dict) -> dict:
     if name == "generate_pacs008":
         from datetime import datetime as _dt
-        ts  = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
-        xml = build_message("sic", "pacs.008", inputs)
+        ts       = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
+        envelope = bool(inputs.get("envelope", False))
+        xml      = build_message("sic", "pacs.008", inputs, envelope=envelope)
         debitor_iid  = inputs.get("debtor_iid", "000000")
         creditor_iid = inputs.get("creditor_iid", "000000")
         return {
@@ -110,6 +111,7 @@ def handle_tool_call(name: str, inputs: dict) -> dict:
     elif name == "generate_camt056":
         from datetime import datetime as _dt
         import uuid as _uuid
+        envelope = bool(inputs.get("envelope", False))
         params = dict(inputs)
         # Auto-fill optional identifiers if not supplied
         if not params.get("orig_msg_nm_id"):
@@ -117,7 +119,7 @@ def handle_tool_call(name: str, inputs: dict) -> dict:
         if not params.get("msg_id"):
             params["msg_id"] = f"CXL-{_dt.utcnow().strftime('%Y%m%d')}-{_uuid.uuid4().hex[:6].upper()}"
         ts = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
-        xml = build_message("sic", "camt.056", params)
+        xml = build_message("sic", "camt.056", params, envelope=envelope)
         return {
             "xml":          xml.decode(),
             "message_type": "camt.056",
@@ -126,10 +128,11 @@ def handle_tool_call(name: str, inputs: dict) -> dict:
 
     elif name == "generate_pacs008_sepa":
         from datetime import datetime as _dt
-        ts  = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
-        params = dict(inputs)
+        ts       = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
+        envelope = bool(inputs.get("envelope", False))
+        params   = dict(inputs)
         params["currency"] = "EUR"  # SEPA is always EUR
-        xml = build_message("sepa", "pacs.008", params)
+        xml = build_message("sepa", "pacs.008", params, envelope=envelope)
         debtor_bic   = inputs.get("debtor_bic",   "UNKNOWN")[:8]
         creditor_bic = inputs.get("creditor_bic", "UNKNOWN")[:8]
         return {

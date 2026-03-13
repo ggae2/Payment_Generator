@@ -25,6 +25,7 @@ TOOLS = [
                 "currency":       {"type": "string", "enum": ["CHF","EUR"], "default": "CHF"},
                 "value_date":     {"type": "string", "description": "YYYY-MM-DD"},
                 "remittance":     {"type": "string"},
+                "envelope":       {"type": "boolean", "description": "Wrap in head.001.001.02 BAH envelope (BizMsgEnvlp + AppHdr). Set true for gateway/CSM-layer testing.", "default": False},
             },
             "required": ["debtor_name","debtor_iban","debtor_iid","creditor_name","creditor_iban","creditor_iid","amount"]
         }
@@ -63,7 +64,8 @@ TOOLS = [
                 "cxl_reason_code":{"type": "string", "enum": ["CUST","DUPL","AGNT","UPAY","TECH","FRAD","CUTA","CURR"], "default": "CUST",
                                    "description": "Cancellation reason code: CUST=customer request, DUPL=duplicate, FRAD=fraud, TECH=technical issue"},
                 "cxl_reason_info":{"type": "string", "description": "Free-text explanation for the recall"},
-                "assgnr_name":    {"type": "string", "description": "Name of the recalling bank"}
+                "assgnr_name":    {"type": "string", "description": "Name of the recalling bank"},
+                "envelope":       {"type": "boolean", "description": "Wrap in head.001.001.02 BAH envelope. Set true for gateway/CSM-layer testing.", "default": False},
             },
             "required": ["assgnr_iid", "assgne_iid", "orig_msg_id", "orig_tx_id", "orig_amount", "orig_currency", "orig_value_date"]
         }
@@ -90,7 +92,8 @@ TOOLS = [
                 "creditor_country": {"type": "string", "description": "ISO 2-letter country code e.g. DE"},
                 "amount":           {"type": "number", "description": "Amount in EUR (0.01 – 999999999.99)"},
                 "value_date":       {"type": "string", "description": "Settlement date YYYY-MM-DD"},
-                "remittance":       {"type": "string", "description": "Unstructured remittance info (max 140 chars)"}
+                "remittance":       {"type": "string", "description": "Unstructured remittance info (max 140 chars)"},
+                "envelope":         {"type": "boolean", "description": "Wrap in head.001.001.02 BAH envelope. Set true for gateway/CSM-layer testing.", "default": False},
             },
             "required": ["debtor_name", "debtor_iban", "debtor_bic", "creditor_name", "creditor_iban", "creditor_bic", "amount"]
         }

@@ -8,16 +8,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 class GenerateRequest(BaseModel):
-    scheme:   str        # sic | sepa | swift
-    msg_type: str        # pacs.008 | pacs.009 | etc.
-    params:   dict
+    scheme:      str        # sic | sepa | swift
+    msg_type:    str        # pacs.008 | pacs.009 | etc.
+    params:      dict
     do_validate: bool = True
+    envelope:    bool = False   # wrap in head.001.001.02 BAH
 
 @router.post("")
 async def generate(req: GenerateRequest):
-    logger.info(f"Generate request: scheme={req.scheme}, msg_type={req.msg_type}, params={req.params}")
+    logger.info(f"Generate request: scheme={req.scheme}, msg_type={req.msg_type}, envelope={req.envelope}, params={req.params}")
     try:
-        xml = build_message(req.scheme, req.msg_type, req.params, validate=req.do_validate)
+        xml = build_message(req.scheme, req.msg_type, req.params, validate=req.do_validate, envelope=req.envelope)
         msg_id_val = req.params.get('msg_id', 'out')
         filename = f"{req.scheme}_{req.msg_type}_{msg_id_val}.xml"
         logger.info(f"Generated file: {filename}")

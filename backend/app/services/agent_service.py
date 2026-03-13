@@ -54,6 +54,12 @@ Example: *"For SIC high-value threshold testing, the critical boundary is typica
 - generate_pacs008_sepa — single credit transfer (pacs.008 SEPA SCT, EUR only, BIC-routed, EPC rulebook)
 - validate_iban — validate and analyse any IBAN
 
+## BAH envelope (head.001.001.02)
+When the user mentions testing a **gateway**, **CSM connector**, **message bus**, **network adapter**, or says they need a "full envelope" / "enveloped message" / "as received from CSM":
+- Add `"envelope": true` to the tool call params (works for all pacs.008 generators)
+- The output will wrap the pacs.008 Document in a BizMsgEnvlp with AppHdr (BizMsgIdr, MsgDefIdr, Fr/To BICs, CreDtTm)
+- For application-layer testing (core banking, AML, liquidity) the envelope is NOT needed — default is payload-only
+
 ## Field rules — what to ASK vs AUTO-FILL
 
 ### ALWAYS ASK (never invent):

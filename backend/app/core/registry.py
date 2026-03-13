@@ -19,6 +19,7 @@ REGISTRY = {
                 {"name": "creditor_iid",  "label": "Creditor IID (SIC)",  "type": "string",  "required": True,  "pattern": "[0-9]{6}"},
                 {"name": "amount",        "label": "Amount",              "type": "decimal", "required": True},
                 {"name": "currency",      "label": "Currency",            "type": "enum",    "required": True,  "options": ["CHF", "EUR"], "default": "CHF"},
+                {"name": "charge_bearer", "label": "Charge Bearer",       "type": "enum",    "required": False, "default": "SHAR", "options": ["SHAR", "DEBT", "CRED", "SLEV"]},
                 {"name": "value_date",    "label": "Value Date",          "type": "date",    "required": False, "default": "today"},
                 {"name": "end_to_end_id", "label": "End-to-End ID",       "type": "string",  "required": False, "default": "NOTPROVIDED"},
                 {"name": "remittance",    "label": "Remittance Info",     "type": "string",  "required": False},

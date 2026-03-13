@@ -27,7 +27,7 @@
       </PmtTpInf>
       <IntrBkSttlmAmt Ccy="{{ currency }}">{{ amount }}</IntrBkSttlmAmt>
       <IntrBkSttlmDt>{{ value_date }}</IntrBkSttlmDt>
-      <ChrgBr>SHAR</ChrgBr>
+      <ChrgBr>{{ charge_bearer | default('SHAR') }}</ChrgBr>
       <InstgAgt>
         <FinInstnId>
           <ClrSysMmbId>
